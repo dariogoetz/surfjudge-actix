@@ -2,5 +2,5 @@ debug = false
 server_address = "127.0.0.1:8080"
 
 [database]
-url = "postgresql://postgres:surfjudge2000@postgres:5432/postgres"
+url = "postgresql://postgres:surfjudge2000@localhost:5432/postgres"
 max_connections = 5
