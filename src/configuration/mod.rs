@@ -4,10 +4,20 @@ use std::env;
 use once_cell::sync::Lazy;
 use serde::Deserialize;
 
+
+// not sure exactly, but I thing because we use CONFIG as a global object, all the settings fields need to be pub
+#[derive(Deserialize, Debug)]
+pub struct Database {
+    pub url: String,
+    pub max_connections: u32,
+}
+
+
 #[derive(Deserialize, Debug)]
 pub struct Settings {
     pub debug: String,
     pub server_address: String,
+    pub database: Database,
 }
 
 
