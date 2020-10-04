@@ -1,9 +1,12 @@
-use actix_web::{web, Responder, HttpResponse};
-
 use crate::database::Pool;
-use crate::models::heat;
+use crate::models::heat::Heat;
 
-pub async fn test_endpoint(db: web::Data<Pool>) -> impl Responder {
-    let result = heat::Heat::find_all(db.get_ref()).await.unwrap();
-    HttpResponse::Ok().body("Hello world!")
+use actix_web::{web, error, Result};
+
+
+pub async fn test_endpoint(db: web::Data<Pool>) -> Result<web::Json<Vec<Heat>>> {
+    let result = Heat::find_all(db.get_ref())
+        .await
+        .map_err(|e| error::ErrorInternalServerError(e))?;
+    Ok(web::Json(result))
 }
