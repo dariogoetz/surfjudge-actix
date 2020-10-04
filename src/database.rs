@@ -8,7 +8,6 @@ use sqlx::PgPool;
 pub type PoolOptions = PgPoolOptions;
 pub type Pool = PgPool;
 
-
 pub async fn get_pool() -> Result<Pool> {
     // Create a connection pool
     let pool = PoolOptions::new()

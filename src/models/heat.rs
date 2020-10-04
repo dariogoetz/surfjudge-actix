@@ -1,10 +1,9 @@
 use crate::database::Pool;
 
-use serde::{Serialize, Deserialize};
-use sqlx::{FromRow};
-use chrono::{NaiveDateTime};
 use anyhow::Result;
-
+use chrono::NaiveDateTime;
+use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 
 // this struct will be used to represent database record
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -18,16 +17,16 @@ pub struct Heat {
     pub number_of_waves: i32,
     pub duration: f64,
     pub heat_type: HeatType,
-    pub additional_info: String
+    pub additional_info: String,
 }
 
 #[derive(sqlx::Type, Debug, Serialize, Deserialize)]
 #[sqlx(rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum HeatType {
     Standard,
-    Call
+    Call,
 }
-
 
 impl Heat {
     pub async fn find_all(db: &Pool) -> Result<Vec<Heat>> {

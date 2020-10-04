@@ -1,20 +1,19 @@
 use slog::info;
+use sloggers::terminal::TerminalLoggerBuilder;
 use sloggers::Build;
-use sloggers::terminal::{TerminalLoggerBuilder};
 
 use anyhow::Result;
 
 use actix_web::{middleware::Logger, App, HttpServer};
 
-mod routes;
 mod configuration;
-mod endpoints;
 mod database;
+mod endpoints;
 mod models;
+mod routes;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-
     use configuration::CONFIG;
 
     let builder = TerminalLoggerBuilder::new();
@@ -30,7 +29,7 @@ async fn main() -> Result<()> {
             .configure(routes::routes)
             .data(pool.clone())
     })
-        .bind(&CONFIG.server_address)?;
+    .bind(&CONFIG.server_address)?;
 
     info!(logger, "Starting server at {:?}", CONFIG.server_address);
     server.run().await?;
