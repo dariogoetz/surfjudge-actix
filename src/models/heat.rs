@@ -1,8 +1,8 @@
 use crate::database::Pool;
 
 use serde::{Serialize, Deserialize};
-use sqlx::{FromRow, Row};
-use chrono::{NaiveDateTime, Utc};
+use sqlx::{FromRow};
+use chrono::{NaiveDateTime};
 use anyhow::Result;
 
 
@@ -31,15 +31,9 @@ pub enum HeatType {
 
 impl Heat {
     pub async fn find_all(db: &Pool) -> Result<Vec<Heat>> {
-        let mut heats = vec![];
-        let recs = sqlx::query_as::<_, Heat>(r#"SELECT * FROM heats ORDER BY id"#)
+        let heats = sqlx::query_as::<_, Heat>(r#"SELECT * FROM heats ORDER BY id"#)
             .fetch_all(db)
             .await?;
-
-        for rec in recs {
-            println!("[heat]: {:?}", rec);
-        }
-
         Ok(heats)
     }
 }

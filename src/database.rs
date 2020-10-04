@@ -1,7 +1,5 @@
 use crate::configuration::CONFIG;
 
-use actix_web::web;
-
 use anyhow::Result;
 
 use sqlx::postgres::PgPoolOptions;
@@ -11,7 +9,7 @@ pub type PoolOptions = PgPoolOptions;
 pub type Pool = PgPool;
 
 
-pub async fn get_pool() -> anyhow::Result<Pool> {
+pub async fn get_pool() -> Result<Pool> {
     // Create a connection pool
     let pool = PoolOptions::new()
         .max_connections(CONFIG.database.max_connections)

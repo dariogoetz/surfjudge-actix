@@ -24,7 +24,7 @@ async fn main() -> Result<()> {
     info!(logger, "Connecting to database: {:?}", CONFIG.database.url);
     let pool = database::get_pool().await?;
 
-    let mut server = HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .configure(routes::routes)
