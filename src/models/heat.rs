@@ -64,10 +64,9 @@ pub enum HeatType {
     Call,
 }
 
-async fn expand_heat(db: &Pool, heat_core: HeatCore) -> anyhow::Result<Heat> {
-    let category = Category::find_by_id(&db, heat_core.category_id as u32).await?;
+async fn expand(db: &Pool, heat_core: HeatCore) -> anyhow::Result<Heat> {
     let mut heat = Heat::from(heat_core);
-    heat.category = category;
+    heat.category = Category::find_by_id(&db, heat.category_id as u32).await?;
     Ok(heat)
 }
 
@@ -79,7 +78,7 @@ impl Heat {
 
         let mut heats = Vec::new();
         for heat_core in heats_core {
-            heats.push(expand_heat(&db, heat_core));
+            heats.push(expand(&db, heat_core));
         }
         Ok(future::try_join_all(heats).await?)
     }
@@ -90,7 +89,7 @@ impl Heat {
             .fetch_optional(db)
             .await?;
         let heat = match heat_core {
-            Some(heat_core) => Some(expand_heat(&db, heat_core).await?),
+            Some(heat_core) => Some(expand(&db, heat_core).await?),
             None => None
         };
         Ok(heat)
