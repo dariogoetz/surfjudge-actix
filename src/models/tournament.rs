@@ -12,7 +12,7 @@ pub struct Tournament {
     pub name: String,
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
-    pub additional_info: String,
+    pub additional_info: Option<String>,
 }
 
 
@@ -31,5 +31,4 @@ impl Tournament {
             .await?;
         Ok(tournament)
     }
-
 }

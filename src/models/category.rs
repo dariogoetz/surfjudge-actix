@@ -12,7 +12,7 @@ pub struct CategoryCore {
     pub id: i32,
     pub tournament_id: i32,
     pub name: String,
-    pub additional_info: String,
+    pub additional_info: Option<String>,
 }
 
 // this struct will be used to represent database record
@@ -21,7 +21,7 @@ pub struct Category {
     pub id: i32,
     pub tournament_id: i32,
     pub name: String,
-    pub additional_info: String,
+    pub additional_info: Option<String>,
     pub tournament: Option<Tournament>,
 }
 
