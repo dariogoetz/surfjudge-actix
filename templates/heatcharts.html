@@ -1,0 +1,108 @@
+{% extends "base_template.html" %}
+
+{% block title %}Surfjudge Charts{% endblock title %}
+{% block nav_items %}['#nav_item_heatcharts']{% endblock nav_items %}
+
+{% block css %}
+{{ super() }}
+<link href="/static/surfjudge/css/heatchart.css" rel="stylesheet">
+{% endblock css %}
+
+
+{% block javascript %}
+{{ super() }}
+
+<script src="/static/surfjudge/js/select_dropdown.js"></script>
+
+<script src="/static/surfjudge/js/heatchart.js"></script>
+<script src="/static/d3js/js/d3.v4.min.js"></script>
+<script src="/static/canvg/js/umd.js"></script>
+
+<script>
+
+ refresh_timer = null;
+ $(document).ready(function(e){
+     $('#tournaments_select_dropdown').select_dropdown({
+         url: '/rest/tournaments',
+         label: 'Tournaments',
+         action_callback: refresh,
+         select_first_on_load: true,
+     });
+
+
+     function refresh(tournament_id){
+         console.log('Refreshing');
+         $('#heatchart_section').empty();
+         if (tournament_id === null || typeof tournament_id == 'undefined'){
+             tournament_id = global_tournament_id;
+         } else {
+             global_tournament_id = tournament_id;
+         }
+         if (tournament_id === null || typeof tournament_id == 'undefined') {
+             console.log('No tournament id set.');
+             return;
+         }
+
+         $.getJSON('/rest/tournaments/{0}/categories'.format(tournament_id), function(categories){
+             $('#category_section').empty();
+
+             if (!categories.length) {
+                 console.log('No categories for tournament with id {0}.'.format(tournament_id))
+                 return;
+             }
+
+             $.each(categories, function(idx, category){
+                add_category_chart($('#heatchart_section'), category);
+             });
+        });
+     }
+ });
+
+ function add_category_chart(elem, category){
+     elem.append($('<div>', {class: 'card'})
+            .append($('<div>', {class: 'card-header bg-secondary text-white'})
+                .append($('<div>', {text: category['name'], class: 'card_header_title'})
+                    .append($('<button>', {text: '', class: 'btn btn-lg btn-secondary float-right export_btn'})
+                        .append($('<span>', {class: 'fa fa-download'})))
+                    .append($('<button>', {text: '', class: 'btn btn-lg btn-light float-right toggle_results_btn'})
+                        .append($('<span>', {class: 'fa fa-chart-bar'})))))
+            .append($('<div>', {class: 'heatchart', style: 'overflow: auto'})))
+        .append($('<hr>'));
+
+     var card = elem.find('.card').last();
+
+     var heatchart = card.find('.heatchart').heatchart({
+         category_id: category['id'],
+         getresultsurl: '/rest/results/{heatid}',
+         websocket_url: {{ websocket_url | safe }},
+         width: null,
+         margin_left: 0, margin_top: 0, margin_right: 0, margin_bottom: 0,
+     });
+
+     card.find('.export_btn').on('click', function() {
+         heatchart.heatchart("export_png");
+     });
+
+     card.find('.toggle_results_btn').on('click', function() {
+         heatchart.heatchart("toggle_show_scores");
+         if ($(this).hasClass("btn-secondary")) {
+             $(this).removeClass("btn-secondary").addClass("btn-light");
+         } else {
+             $(this).removeClass("btn-light").addClass("btn-secondary");
+         }
+     })
+
+ }
+
+</script>
+
+{% endblock javascript %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div id="tournaments_select_dropdown" class="col-2"></div>
+    </div>
+    <div id="heatchart_section"></div>
+</div>
+{% endblock content %}

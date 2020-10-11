@@ -1,4 +1,4 @@
-use crate::endpoints::{base, heat, category, tournament, result, participation, surfer, lycra_color, heat_advancement, page_index};
+use crate::endpoints::{base, heat, category, tournament, result, participation, surfer, lycra_color, heat_advancement, pages};
 
 use actix_web::web;
 use actix_files as fs;
@@ -14,6 +14,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
         web::scope("/rest")
             .route("/heats", web::get().to(heat::get_all))
             .route("/heats/{id}", web::get().to(heat::get_by_id))
+            .route("/active_heats/{tournament_id}", web::get().to(heat::get_active_heats_by_tournament_id))
             .route("/categories", web::get().to(category::get_all))
             .route("/categories/{id}", web::get().to(category::get_by_id))
             .route("/tournaments", web::get().to(tournament::get_all))
@@ -33,6 +34,9 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
     // web page endpoints
     cfg.service(
         web::scope("")
-            .route("/", web::get().to(page_index::index))
+            .route("/", web::get().to(pages::live_results))
+            .route("/results", web::get().to(pages::results))
+            .route("/live_results", web::get().to(pages::live_results))
+            .route("/heatcharts", web::get().to(pages::heatcharts))
     );
 }
