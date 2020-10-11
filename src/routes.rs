@@ -1,8 +1,14 @@
 use actix_web::web;
 
 use crate::endpoints::{base, heat, category, tournament, result, participation, surfer, lycra_color, heat_advancement};
+use actix_files as fs;
 
 pub fn routes(cfg: &mut web::ServiceConfig) {
+    // serve static files
+    cfg.service(
+        fs::Files::new("/static", "./static").show_files_listing()
+    );
+
     cfg.service(
         web::scope("/rest")
             .route("/", web::get().to(base::test_endpoint))
