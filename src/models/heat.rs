@@ -5,7 +5,7 @@ use futures::future;
 
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
+use sqlx::{Type, FromRow};
 
 // this struct will be used to represent database record
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -56,7 +56,7 @@ impl From<HeatCore> for Heat {
     }
 }
 
-#[derive(sqlx::Type, Debug, Serialize, Deserialize)]
+#[derive(Type, Debug, Serialize, Deserialize)]
 #[sqlx(rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum HeatType {
@@ -93,5 +93,30 @@ impl Heat {
             None => None
         };
         Ok(heat)
+    }
+
+
+    pub async fn find_active_heats_by_tournament_id(db: &Pool, tournament_id: u32) -> anyhow::Result<Vec<Heat>> {
+        let heats_core = sqlx::query_as::<_, HeatCore>(
+            r#"
+SELECT h.*
+FROM heats h
+INNER JOIN categories c
+ON h.category_id = c.id
+  INNER JOIN tournaments t
+  ON c.tournament_id = t.id
+    INNER JOIN heat_state s
+    ON s.heat_id = h.id
+  WHERE s.state = 'active' AND t.id = $1"#
+        )
+            .bind(tournament_id)
+            .fetch_all(db)
+            .await?;
+
+        let mut heats = Vec::new();
+        for heat_core in heats_core {
+            heats.push(expand(&db, heat_core));
+        }
+        Ok(future::try_join_all(heats).await?)
     }
 }
