@@ -1,0 +1,43 @@
+.placings_table thead>tr {
+    font-weight: bold;
+    font-size: 1.5em;
+    background-color: #EEEEEE;
+}
+
+.placings_table tbody>tr {
+    font-size: 1.5em;
+}
+
+.placings_table tbody>tr.place_0 {
+    background-color: rgba(255, 200, 0, 0.5);
+}
+
+.placings_table tbody>tr.place_1 {
+    background-color: rgba(200, 200, 200, 0.5);
+}
+
+.placings_table tbody>tr.place_2 {
+    background-color: rgba(255, 100, 0, 0.5);
+}
+
+.placings_table tbody>tr>td.unpublished {
+    background: repeating-linear-gradient(
+        45deg,
+        #00000000,
+        #00000000 10px,
+        #00000022 10px,
+        #00000022 20px
+      );
+    color: #333333;
+}
+
+.placings_table tbody>tr>td.place_cell, .placings_table thead>tr>td.place_cell {
+    text-align: center;
+}
+
+.placings_table tbody>tr>td.name_cell {
+}
+
+.placings_table tbody>tr>td.total_score_cell, .placings_table thead>tr>td.total_score_cell {
+    text-align: center;
+}

@@ -1,0 +1,136 @@
+.heatchart .focus_heat > rect{
+    fill: #DDDDDD;
+    stroke: none;
+}
+
+.heatchart .focus_heat > text{
+    fill: #FFFFFF;
+    font-weight: bold;
+}
+
+.heatchart .heat_node {
+     cursor: pointer;
+ }
+
+.heatchart .heat_node > rect {
+     fill: #BBBBBB;
+     stroke: #CCCCCC;
+     stroke-width: 0.5px;
+ }
+
+.heatchart .heat_node text.title {
+     font-weight: bold;
+ }
+
+.heatchart .heat_node text.total_score {
+     font-weight: bold;
+ }
+
+.heatchart .heat_node text {
+     font: 10px sans-serif;
+ }
+
+.heatchart .heat_node > .heat_seed rect {
+     stroke: #CCCCCC;
+ }
+
+.heatchart .heat_node > .heat_place rect {
+     fill: #FFFFFF;
+     stroke: #CCCCCC;
+ }
+
+.heatchart .heat_node > .heat_place.first rect {
+    fill: rgb(255, 219, 89);
+ }
+
+.heatchart .heat_node > .heat_place.second rect {
+    fill: rgb(230, 230, 230);
+ }
+
+.heatchart .heat_node > .heat_place.third rect {
+    fill: rgb(255, 162, 100);
+ }
+
+.heatchart .heat_node > .heat_place .score > text {
+    font-size: 8px;
+    font-stretch: ultra-condensed;
+}
+
+.heatchart .heat_node > .heat_place .score > text.best_score {
+    font-weight: bold;
+ }
+
+
+.heatchart .link {
+     fill: none;
+     stroke: #CCCCCC;
+     stroke-width: 1px;
+ }
+
+.heatchart .link.focus {
+    fill: none;
+    stroke: #333333;
+    stroke-width: 1.5px;
+ }
+
+.heatchart .link.potential_circle_link {
+    stroke: #ff0000;
+    stroke-width: 1px;
+}
+.heatchart .link.potential_circle_link.focus {
+    stroke: #ff0000;
+    stroke-width: 2px;
+}
+
+.heatchart .link_connector {
+    fill-opacity: 0;
+    fill: #aaaaaa;
+}
+
+.heatchart .delete_connector {
+    fill: #ff000077;
+}
+.heatchart .delete_connector:hover, .heatchart .delete_connector.touch_hover {
+    fill: #ff0000;
+}
+
+.heatchart .link_connector:hover, .heatchart .link_connector.touch_hover{
+    fill-opacity: 1;
+}
+
+.heatchart .link_connector.potential_target {
+    fill-opacity: 0.2;
+}
+
+.heatchart .link_connector.potential_target:hover {
+    fill-opacity: 0.5;
+}
+
+.heatchart .participant_dropoff {
+    fill-opacity: 0.1;
+    stroke: #aaaaaa;
+    fill: #444444;
+    stroke-opacity: 0.3;
+}
+
+.heatchart .participant_dropoff:hover, .heatchart .participant_dropoff.touch_hover {
+    fill-opacity: 0.5;
+}
+
+.heatchart .add_heat_symbol_background {
+    opacity: 0;
+}
+.heatchart .add_heat_symbol_path {
+    stroke: #0000ff;
+    opacity: 0.3;
+    fill: #0000ff;
+    fill-opacity: 0.2;
+}
+
+.heatchart .heat_dropoff {
+    fill: #000000;
+    fill-opacity: 0.2;
+}
+.heatchart .heat_dropoff:hover, .heatchart .heat_dropoff.touch_hover {
+    fill-opacity: 0.5;
+}

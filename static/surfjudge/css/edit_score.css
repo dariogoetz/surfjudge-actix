@@ -1,0 +1,87 @@
+.edit_score table.outer_table td.wave_label_td {
+    width: 25%;
+    text-align: center;
+}
+
+.edit_score table.outer_table td .wave_label {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.edit_score table.outer_table td.number_pad_td {
+    background-color: #eeeeee;
+}
+
+.edit_score table.outer_table td.right_col {
+    width: 10%;
+}
+
+
+.edit_score table.outer_table td.missed_btn_td {
+    vertical-align: center;
+}
+.edit_score table.outer_table .missed_btn {
+    width: 100px;
+    height: 70px;
+    vertical-align: bottom;
+}
+
+.edit_score table.outer_table td.score_td {
+    background-color: #eeeeee;
+    text-align: center;
+}
+
+.edit_score table.outer_table .score {
+    font-size: 3em;
+}
+
+
+
+.edit_score table.outer_table td.cancel_btn_td {
+    background-color: #eeeeee;
+    width: 15%;
+    border-radius: 0px 0px 0px 0px;
+}
+.edit_score table.outer_table .cancel_btn {
+    width: 100%;
+    height: 70px;
+}
+.edit_score table.outer_table td.clear_btn_td {
+    background-color: #eeeeee;
+    width: 10%;
+    border-radius: 0px 0px 0px 0px;
+    vertical-align: middle;
+}
+.edit_score table.outer_table .clear_btn {
+    width: 100%;
+    height: 70px;
+}
+.edit_score table.outer_table  td.submit_btn_td {
+    background-color: #eeeeee;
+    width: 10%;
+    border-radius: 0px 0px 0px 0px;
+    vertical-align: bottom;
+}
+.edit_score table.outer_table .submit_btn {
+    width: 100%;
+    height: 70px;
+}
+
+
+
+.edit_score table.number_pad td.number_btn {
+    font-size: 2em;
+    font-weight: bold;
+}
+.edit_score table.number_pad td.number_btn:hover {
+    background-color: #eeeeee;
+}
+
+.edit_score table.number_pad tr.number_btn_row {
+    height: 100px;
+}
+
+.edit_score .old_score_label {
+    color: red;
+}
+
