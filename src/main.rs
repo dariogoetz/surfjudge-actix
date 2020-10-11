@@ -11,6 +11,7 @@ mod database;
 mod endpoints;
 mod models;
 mod routes;
+mod templates;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -19,15 +20,18 @@ async fn main() -> Result<()> {
     let builder = TerminalLoggerBuilder::new();
     let logger = builder.build().unwrap();
 
-    // generate a database connection pool
     info!(logger, "Connecting to database: {:?}", CONFIG.database.url);
     let pool = database::get_pool().await?;
+
+    info!(logger, "Loading templates from {:?}", CONFIG.template_dir);
+    let tmpl = templates::get_templates().await?;
 
     let server = HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .configure(routes::routes)
             .data(pool.clone())
+            .data(tmpl.clone())
     })
     .bind(&CONFIG.server_address)?;
 

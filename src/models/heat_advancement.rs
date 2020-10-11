@@ -109,7 +109,5 @@ impl HeatAdvancement {
         Ok(future::try_join_all(heat_advancements).await?)
     }
 
-    // TODO: allow querying by to- or from_heat_id
-
     // TODO: get advancing surfers
 }
