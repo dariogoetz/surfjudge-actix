@@ -7,3 +7,5 @@ pub mod participation;
 pub mod surfer;
 pub mod lycra_color;
 pub mod heat_advancement;
+
+pub mod page_index;

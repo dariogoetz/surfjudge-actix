@@ -1,6 +1,6 @@
-use actix_web::web;
+use crate::endpoints::{base, heat, category, tournament, result, participation, surfer, lycra_color, heat_advancement, page_index};
 
-use crate::endpoints::{base, heat, category, tournament, result, participation, surfer, lycra_color, heat_advancement};
+use actix_web::web;
 use actix_files as fs;
 
 pub fn routes(cfg: &mut web::ServiceConfig) {
@@ -9,9 +9,9 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
         fs::Files::new("/static", "./static").show_files_listing()
     );
 
+    // rest API endpoints
     cfg.service(
         web::scope("/rest")
-            .route("/", web::get().to(base::test_endpoint))
             .route("/heats", web::get().to(heat::get_all))
             .route("/heats/{id}", web::get().to(heat::get_by_id))
             .route("/categories", web::get().to(category::get_all))
@@ -28,5 +28,11 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
             .route("/lycra_colors/{id}", web::get().to(lycra_color::get_by_id))
             .route("/advancements", web::get().to(heat_advancement::get_all))
             .route("/advancements/{category_id}", web::get().to(heat_advancement::get_by_category_id))
+    );
+
+    // web page endpoints
+    cfg.service(
+        web::scope("")
+            .route("/", web::get().to(page_index::index))
     );
 }

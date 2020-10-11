@@ -1,0 +1,128 @@
+{% extends "base_template.html" %}
+
+{% block title %}Surfjudge Results{% endblock title %}
+{% block nav_items %}['#nav_item_live_results']{% endblock nav_items %}
+
+
+{% block css %}
+{{ super() }}
+<link href="/static/surfjudge/css/heat_timer.css" rel="stylesheet">
+<link href="/static/surfjudge/css/results_table.css" rel="stylesheet">
+{% endblock css %}
+
+
+{% block javascript %}
+{{ super() }}
+
+<script src="/static/surfjudge/js/select_dropdown.js"></script>
+
+<script src="/static/surfjudge/js/heat_timer.js"></script>
+<script src="/static/surfjudge/js/results_table.js"></script>
+
+<script>
+
+ refresh_timer = null;
+ $(document).ready(function(e){
+     $('#tournaments_select_dropdown').select_dropdown({
+         url: '/rest/tournaments',
+         label: 'Tournament',
+         action_callback: refresh,
+         select_first_on_load: true,
+     });
+
+
+    var websocket = new WebSocketClient({
+        url: '{{ websocket_url | safe }}',
+        channels: {
+            active_heats: function(msg){
+                var msg = JSON.parse(msg);
+                if (msg["msg"] == "start_heat" || msg["msg"] == "stop_heat") {
+                    refresh(global_tournament_id);
+                }
+            }
+        },
+        name: 'Page',
+    });
+
+     function refresh(tournament_id){
+         console.log('Refreshing');
+         if (tournament_id === null || typeof tournament_id == 'undefined'){
+             tournament_id = global_tournament_id;
+         } else {
+             global_tournament_id = tournament_id;
+         }
+         if (tournament_id === null || typeof tournament_id == 'undefined') {
+             console.log('No tournament id set.');
+             return;
+         }
+
+         $.getJSON('/rest/active_heats/' + tournament_id, function(current_heats){
+            if ($('#score_section .result_table_div').data('surfjudgeResults_table')){
+                 $('#score_section .result_table_div').results_table('destroy');
+             }
+             $('#category_section').empty();
+             $('#score_section').empty();
+             if (!current_heats.length) {
+                 $('#score_section')
+                     .append($('<br>'))
+                     .append($('<img>', {src: "/static/img/rapid_surfing_small.jpg", width: "100%"}));
+                 console.log('No active heats.')
+                 return;
+             }
+
+            current_heats.sort(function(a, b){return b['id'] - a['id'];});
+
+            for (var i = 0; i < current_heats.length; i++) {
+                var heat_id = current_heats[i]['id'];
+                var heat_name = current_heats[i]['name'];
+                var category_name = current_heats[i]['category']['name'];
+
+                // (re-)load scores table
+                var card = $('<div>', {class: "card"});
+                var header = $('<div>', {class: "card-header bg-secondary text-white"});
+                var row = $('<div>', {class:"row"});
+                var col = $('<div>', {class: 'col-10'});
+
+                col.append($('<span>', {
+                                html: '{0}: {1}'.format(category_name, heat_name),
+                                class: 'card_header_title',
+                            }));
+                row.append(col);
+                row.append($('<div>', {
+                                class: 'timer_elem col-2',
+                            }));
+                header.append(row);
+
+                header.find('.timer_elem').heat_timer({
+                    heat_id: heat_id,
+                    websocket_url: '{{ websocket_url | safe}}',
+                    class: 'float-right card_header_title',
+                });
+
+                var table = $('<div>', {class: "result_table_div", style: "overflow: auto;"})
+                table.results_table({
+                    heat_id: heat_id,
+                    getresultsurl: '/rest/results/{heat_id}',
+                    websocket_url: '{{ websocket_url | safe }}',
+                    websocket_channels: ['results'],
+                });
+
+                card.append(header).append(table);
+                $('#score_section').append(card);
+            }
+         });
+     }
+ });
+
+
+</script>
+{% endblock javascript %}
+
+{% block content %}
+<div class="container">
+<div class="row">
+        <div id="tournaments_select_dropdown" class="col-2"></div>
+    </div>
+    <div id="score_section"></div>
+</div>
+{% endblock content %}
