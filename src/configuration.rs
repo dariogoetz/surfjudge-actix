@@ -16,6 +16,8 @@ pub struct Settings {
     pub debug: String,
     pub server_address: String,
     pub database: Database,
+    pub template_dir: String,
+    pub websocket_url: String,
 }
 
 pub static CONFIG: Lazy<Settings> = Lazy::new(|| {
