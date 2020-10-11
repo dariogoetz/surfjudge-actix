@@ -78,6 +78,37 @@ impl HeatAdvancement {
         Ok(future::try_join_all(heat_advancements).await?)
     }
 
+    // TODO: remove duplication (to_heat_id and from_heat_id queries are basically identical)
+    pub async fn find_by_to_heat_id(db: &Pool, value: u32) -> anyhow::Result<Vec<HeatAdvancement>> {
+        let heat_advancements_core = sqlx::query_as::<_, HeatAdvancementCore>(
+            r#"SELECT * FROM heat_advancements WHERE to_heat_id = $1"#
+        )
+            .bind(value)
+            .fetch_all(db)
+            .await?;
+
+        let mut heat_advancements = Vec::new();
+        for heat_advancement_core in heat_advancements_core {
+            heat_advancements.push(expand(&db, heat_advancement_core));
+        }
+        Ok(future::try_join_all(heat_advancements).await?)
+    }
+    
+    pub async fn find_by_from_heat_id(db: &Pool, value: u32) -> anyhow::Result<Vec<HeatAdvancement>> {
+        let heat_advancements_core = sqlx::query_as::<_, HeatAdvancementCore>(
+            r#"SELECT * FROM heat_advancements WHERE from_heat_id = $1"#
+        )
+            .bind(value)
+            .fetch_all(db)
+            .await?;
+
+        let mut heat_advancements = Vec::new();
+        for heat_advancement_core in heat_advancements_core {
+            heat_advancements.push(expand(&db, heat_advancement_core));
+        }
+        Ok(future::try_join_all(heat_advancements).await?)
+    }
+
     // TODO: allow querying by to- or from_heat_id
 
     // TODO: get advancing surfers
