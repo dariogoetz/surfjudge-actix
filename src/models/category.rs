@@ -45,7 +45,7 @@ async fn expand(db: &Pool, category_core: CategoryCore) -> anyhow::Result<Catego
 
 impl Category {
     pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<Category>> {
-        let categories_core = sqlx::query_as::<_, CategoryCore>(r#"SELECT * FROM categories ORDER BY id"#)
+        let categories_core = sqlx::query_as::<_, CategoryCore>(r#"SELECT * FROM categories"#)
             .fetch_all(db)
             .await?;
 
@@ -66,5 +66,20 @@ impl Category {
             None => None,
         };
         Ok(category)
+    }
+
+    pub async fn find_by_tournament_id(db: &Pool, tournament_id: u32) -> anyhow::Result<Vec<Category>> {
+        let categories_core = sqlx::query_as::<_, CategoryCore>(
+            r#"SELECT c.* FROM categories c INNER JOIN tournaments t ON c.tournament_id = t.id WHERE t.id = $1"#
+        )
+            .bind(tournament_id)
+            .fetch_all(db)
+            .await?;
+
+        let mut categories = Vec::new();
+        for category_core in categories_core {
+            categories.push(expand(&db, category_core));
+        }
+        Ok(future::try_join_all(categories).await?)
     }
 }

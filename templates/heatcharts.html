@@ -74,7 +74,7 @@
      var heatchart = card.find('.heatchart').heatchart({
          category_id: category['id'],
          getresultsurl: '/rest/results/{heatid}',
-         websocket_url: {{ websocket_url | safe }},
+         websocket_url: '{{ websocket_url | safe }}',
          width: null,
          margin_left: 0, margin_top: 0, margin_right: 0, margin_bottom: 0,
      });
