@@ -1,4 +1,4 @@
-use crate::endpoints::{base, heat, category, tournament, result, participation, surfer, lycra_color, heat_advancement, pages};
+use crate::endpoints::{heat, category, tournament, result, participation, surfer, lycra_color, heat_advancement, pages};
 
 use actix_web::web;
 use actix_files as fs;
