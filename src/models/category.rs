@@ -37,49 +37,60 @@ impl From <CategoryCore> for Category {
     }
 }
 
-async fn expand(db: &Pool, category_core: CategoryCore) -> anyhow::Result<Category> {
-    let mut category = Category::from(category_core);
-    category.tournament = Tournament::find_by_id(&db, category.tournament_id as u32).await?;
-    Ok(category)
-}
-
 impl Category {
-    pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<Category>> {
-        let categories_core = sqlx::query_as::<_, CategoryCore>(r#"SELECT * FROM categories"#)
-            .fetch_all(db)
-            .await?;
 
-        let mut categories = Vec::new();
-        for category_core in categories_core {
-            categories.push(expand(&db, category_core));
-        }
-        Ok(future::try_join_all(categories).await?)
+    async fn expand(mut self, db: &Pool) -> Self {
+        self.tournament = Tournament::find_by_id(&db, self.tournament_id as u32).await.unwrap_or(None);
+        self
     }
 
-    pub async fn find_by_id(db: &Pool, category_id: u32) -> anyhow::Result<Option<Category>> {
-        let category_core = sqlx::query_as::<_, CategoryCore>(r#"SELECT * FROM categories WHERE id = $1"#)
+    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Category>> {
+        let categories = sqlx::query_as::<_, CategoryCore>(r#"SELECT * FROM categories"#)
+            .fetch_all(db)
+            .await?
+            .into_iter().map(|c| Category::from(c));
+
+        let categories = match expand {
+            true => {
+                future::join_all(categories.map(|category|{ category.expand(&db) })).await
+            },
+            false => categories.collect(),
+        };
+        Ok(categories)
+    }
+
+    pub async fn find_by_id(db: &Pool, category_id: u32, expand: bool) -> anyhow::Result<Option<Category>> {
+        let mut category = sqlx::query_as::<_, CategoryCore>(r#"SELECT * FROM categories WHERE id = $1"#)
             .bind(category_id)
             .fetch_optional(db)
-            .await?;
-        let category = match category_core {
-            Some(category_core) => Some(expand(&db, category_core).await?),
-            None => None,
-        };
+            .await?
+            .map(|c| Category::from(c));
+
+        // todo: expand?
+        if expand {
+            category = match category {
+                Some(c) => Some(c.expand(&db).await),
+                None => None,
+            };
+        }
         Ok(category)
     }
 
-    pub async fn find_by_tournament_id(db: &Pool, tournament_id: u32) -> anyhow::Result<Vec<Category>> {
-        let categories_core = sqlx::query_as::<_, CategoryCore>(
+    pub async fn find_by_tournament_id(db: &Pool, tournament_id: u32, expand: bool) -> anyhow::Result<Vec<Category>> {
+        let categories = sqlx::query_as::<_, CategoryCore>(
             r#"SELECT c.* FROM categories c INNER JOIN tournaments t ON c.tournament_id = t.id WHERE t.id = $1"#
         )
             .bind(tournament_id)
             .fetch_all(db)
-            .await?;
+            .await?
+            .into_iter().map(|c| Category::from(c));
 
-        let mut categories = Vec::new();
-        for category_core in categories_core {
-            categories.push(expand(&db, category_core));
-        }
-        Ok(future::try_join_all(categories).await?)
+        let categories = match expand {
+            true => {
+                future::join_all(categories.map(|category|{ category.expand(&db) })).await
+            },
+            false => categories.collect(),
+        };
+        Ok(categories)
     }
 }

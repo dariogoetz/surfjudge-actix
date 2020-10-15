@@ -41,8 +41,8 @@ impl From<HeatAdvancementCore> for HeatAdvancement {
 
 async fn expand(db: &Pool, heat_advancement_core: HeatAdvancementCore) -> anyhow::Result<HeatAdvancement> {
     let mut heat_advancement = HeatAdvancement::from(heat_advancement_core);
-    let to_heat_fut = Heat::find_by_id(&db, heat_advancement.to_heat_id as u32);
-    let from_heat_fut = Heat::find_by_id(&db, heat_advancement.from_heat_id as u32);
+    let to_heat_fut = Heat::find_by_id(&db, heat_advancement.to_heat_id as u32, false);
+    let from_heat_fut = Heat::find_by_id(&db, heat_advancement.from_heat_id as u32, false);
     let pair = future::try_join(to_heat_fut, from_heat_fut).await?;
     heat_advancement.to_heat = pair.0;
     heat_advancement.from_heat = pair.1;

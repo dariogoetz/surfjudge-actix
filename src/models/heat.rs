@@ -1,5 +1,5 @@
 use crate::database::Pool;
-use crate::models::category::Category;
+use crate::models::{category::Category, participation::Participation};
 
 use futures::future;
 
@@ -36,6 +36,7 @@ pub struct Heat {
     pub heat_type: HeatType,
     pub additional_info: String,
     pub category: Option<Category>,
+    pub participations: Option<Vec<Participation>>,
 }
 
 impl From<HeatCore> for Heat {
@@ -52,6 +53,8 @@ impl From<HeatCore> for Heat {
             heat_type: heat.heat_type,
             additional_info: heat.additional_info,
             category: None,
+            participations: None,
+
         }
     }
 }
@@ -64,40 +67,50 @@ pub enum HeatType {
     Call,
 }
 
-async fn expand(db: &Pool, heat_core: HeatCore) -> anyhow::Result<Heat> {
-    let mut heat = Heat::from(heat_core);
-    heat.category = Category::find_by_id(&db, heat.category_id as u32).await?;
-    Ok(heat)
-}
-
 impl Heat {
-    pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<Heat>> {
-        let heats_core = sqlx::query_as::<_, HeatCore>(r#"SELECT * FROM heats ORDER BY id"#)
-            .fetch_all(db)
-            .await?;
-
-        let mut heats = Vec::new();
-        for heat_core in heats_core {
-            heats.push(expand(&db, heat_core));
-        }
-        Ok(future::try_join_all(heats).await?)
+    async fn expand(mut self, db: &Pool) -> Self {
+        //let cat_fut = Category::find_by_id(&db, heat.category_id as u32).await.unwrap_or(None);
+        //let part_fut = Participation::find_by_heat_id(&db, heat.id as u32).await.unwrap_or(None);
+        //let pair = future::join(cat_fut, part_fut).await;
+        //self.category = cat_fut;
+        //self.participations = Some(part_fut);
+        self
     }
 
-    pub async fn find_by_id(db: &Pool, heat_id: u32) -> anyhow::Result<Option<Heat>> {
-        let heat_core = sqlx::query_as::<_, HeatCore>(r#"SELECT * FROM heats WHERE id = $1"#)
+    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Heat>> {
+        let heats = sqlx::query_as::<_, HeatCore>(r#"SELECT * FROM heats"#)
+            .fetch_all(db)
+            .await?
+            .into_iter().map(|c| Heat::from(c));
+
+        let heats = match expand {
+            true => {
+                future::join_all(heats.map(|h|{ h.expand(&db) })).await
+            },
+            false => heats.collect(),
+        };
+        Ok(heats)
+    }
+
+    pub async fn find_by_id(db: &Pool, heat_id: u32, expand: bool) -> anyhow::Result<Option<Heat>> {
+        let mut heat = sqlx::query_as::<_, HeatCore>(r#"SELECT * FROM heats WHERE id = $1"#)
             .bind(heat_id)
             .fetch_optional(db)
-            .await?;
-        let heat = match heat_core {
-            Some(heat_core) => Some(expand(&db, heat_core).await?),
-            None => None
-        };
+            .await?
+            .map(|c| Heat::from(c));
+
+        if expand {
+            heat = match heat {
+                Some(h) => Some(h.expand(&db).await),
+                None => None,
+            }
+        }
         Ok(heat)
     }
 
 
-    pub async fn find_active_heats_by_tournament_id(db: &Pool, tournament_id: u32) -> anyhow::Result<Vec<Heat>> {
-        let heats_core = sqlx::query_as::<_, HeatCore>(
+    pub async fn find_active_heats_by_tournament_id(db: &Pool, tournament_id: u32, expand:bool) -> anyhow::Result<Vec<Heat>> {
+        let heats = sqlx::query_as::<_, HeatCore>(
             r#"
 SELECT h.*
 FROM heats h
@@ -111,12 +124,15 @@ ON h.category_id = c.id
         )
             .bind(tournament_id)
             .fetch_all(db)
-            .await?;
+            .await?
+            .into_iter().map(|h| Heat::from(h));
 
-        let mut heats = Vec::new();
-        for heat_core in heats_core {
-            heats.push(expand(&db, heat_core));
-        }
-        Ok(future::try_join_all(heats).await?)
+        let heats = match expand {
+            true => {
+                future::join_all(heats.map(|h|{ h.expand(&db) })).await
+            },
+            false => heats.collect(),
+        };
+        Ok(heats)
     }
 }
