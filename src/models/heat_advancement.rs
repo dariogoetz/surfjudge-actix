@@ -27,7 +27,7 @@ pub struct HeatAdvancement {
 }
 
 impl From<HeatAdvancementCore> for HeatAdvancement {
-    fn from(heat_advancement: HeatAdvancementCore) -> Self {
+    fn from(heat_advancement: HeatAdvancementCore) -> HeatAdvancement {
         HeatAdvancement {
             to_heat_id: heat_advancement.to_heat_id,
             seed: heat_advancement.seed,
@@ -39,74 +39,82 @@ impl From<HeatAdvancementCore> for HeatAdvancement {
     }
 }
 
-async fn expand(db: &Pool, heat_advancement_core: HeatAdvancementCore) -> anyhow::Result<HeatAdvancement> {
-    let mut heat_advancement = HeatAdvancement::from(heat_advancement_core);
-    let to_heat_fut = Heat::find_by_id(&db, heat_advancement.to_heat_id as u32, false);
-    let from_heat_fut = Heat::find_by_id(&db, heat_advancement.from_heat_id as u32, false);
-    let pair = future::try_join(to_heat_fut, from_heat_fut).await?;
-    heat_advancement.to_heat = pair.0;
-    heat_advancement.from_heat = pair.1;
-    Ok(heat_advancement)
-}
 
 impl HeatAdvancement {
-    pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<HeatAdvancement>> {
-        let heat_advancements_core = sqlx::query_as::<_, HeatAdvancementCore>(r#"SELECT * FROM heat_advancements"#)
-            .fetch_all(db)
-            .await?;
-
-        let mut heat_advancements = Vec::new();
-        for heat_advancement_core in heat_advancements_core {
-            heat_advancements.push(expand(&db, heat_advancement_core));
-        }
-        Ok(future::try_join_all(heat_advancements).await?)
+    async fn expand(mut self, db: &Pool) -> Self {
+        self.to_heat = Heat::find_by_id(&db, self.to_heat_id as u32, false).await.unwrap_or(None);
+        self.from_heat = Heat::find_by_id(&db, self.from_heat_id as u32, false).await.unwrap_or(None);
+        self
     }
 
+    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let heat_advancements = sqlx::query_as::<_, HeatAdvancementCore>(r#"SELECT * FROM heat_advancements"#)
+            .fetch_all(db)
+            .await?
+            .into_iter().map(|ha| Self::from(ha));
 
-    pub async fn find_by_category_id(db: &Pool, category_id: u32) -> anyhow::Result<Vec<HeatAdvancement>> {
-        let heat_advancements_core = sqlx::query_as::<_, HeatAdvancementCore>(
+        let heat_advancements = match expand {
+            true => {
+                future::join_all(heat_advancements.map(|ha|{ ha.expand(&db) })).await
+            },
+            false => heat_advancements.collect(),
+        };
+        Ok(heat_advancements)
+    }
+
+    pub async fn find_by_category_id(db: &Pool, category_id: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let heat_advancements = sqlx::query_as::<_, HeatAdvancementCore>(
             r#"SELECT adv.* FROM heat_advancements adv JOIN heats ON adv.to_heat_id = heats.id WHERE heats.category_id = $1"#
         )
             .bind(category_id)
             .fetch_all(db)
-            .await?;
+            .await?
+            .into_iter().map(|ha| Self::from(ha));
 
-        let mut heat_advancements = Vec::new();
-        for heat_advancement_core in heat_advancements_core {
-            heat_advancements.push(expand(&db, heat_advancement_core));
-        }
-        Ok(future::try_join_all(heat_advancements).await?)
+        let heat_advancements = match expand {
+            true => {
+                future::join_all(heat_advancements.map(|ha|{ ha.expand(&db) })).await
+            },
+            false => heat_advancements.collect(),
+        };
+        Ok(heat_advancements)
     }
 
     // TODO: remove duplication (to_heat_id and from_heat_id queries are basically identical)
-    pub async fn find_by_to_heat_id(db: &Pool, value: u32) -> anyhow::Result<Vec<HeatAdvancement>> {
-        let heat_advancements_core = sqlx::query_as::<_, HeatAdvancementCore>(
+    pub async fn find_by_to_heat_id(db: &Pool, value: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let heat_advancements = sqlx::query_as::<_, HeatAdvancementCore>(
             r#"SELECT * FROM heat_advancements WHERE to_heat_id = $1"#
         )
             .bind(value)
             .fetch_all(db)
-            .await?;
+            .await?
+            .into_iter().map(|ha| Self::from(ha));
 
-        let mut heat_advancements = Vec::new();
-        for heat_advancement_core in heat_advancements_core {
-            heat_advancements.push(expand(&db, heat_advancement_core));
-        }
-        Ok(future::try_join_all(heat_advancements).await?)
+        let heat_advancements = match expand {
+            true => {
+                future::join_all(heat_advancements.map(|ha|{ ha.expand(&db) })).await
+            },
+            false => heat_advancements.collect(),
+        };
+        Ok(heat_advancements)
     }
     
-    pub async fn find_by_from_heat_id(db: &Pool, value: u32) -> anyhow::Result<Vec<HeatAdvancement>> {
-        let heat_advancements_core = sqlx::query_as::<_, HeatAdvancementCore>(
+    pub async fn find_by_from_heat_id(db: &Pool, value: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let heat_advancements = sqlx::query_as::<_, HeatAdvancementCore>(
             r#"SELECT * FROM heat_advancements WHERE from_heat_id = $1"#
         )
             .bind(value)
             .fetch_all(db)
-            .await?;
+            .await?
+            .into_iter().map(|ha| Self::from(ha));
 
-        let mut heat_advancements = Vec::new();
-        for heat_advancement_core in heat_advancements_core {
-            heat_advancements.push(expand(&db, heat_advancement_core));
-        }
-        Ok(future::try_join_all(heat_advancements).await?)
+        let heat_advancements = match expand {
+            true => {
+                future::join_all(heat_advancements.map(|ha|{ ha.expand(&db) })).await
+            },
+            false => heat_advancements.collect(),
+        };
+        Ok(heat_advancements)
     }
 
     // TODO: get advancing surfers

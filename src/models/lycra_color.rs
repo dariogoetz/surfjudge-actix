@@ -14,14 +14,14 @@ pub struct LycraColor {
 
 
 impl LycraColor {
-    pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<LycraColor>> {
+    pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<Self>> {
         let lycra_colors = sqlx::query_as::<_, LycraColor>(r#"SELECT * FROM lycra_colors"#)
             .fetch_all(db)
             .await?;
         Ok(lycra_colors)
     }
 
-    pub async fn find_by_id(db: &Pool, lycra_color_id: u32) -> anyhow::Result<Option<LycraColor>> {
+    pub async fn find_by_id(db: &Pool, lycra_color_id: u32) -> anyhow::Result<Option<Self>> {
         let tournament = sqlx::query_as::<_, LycraColor>(r#"SELECT * FROM lycra_colors WHERE id = $1"#)
             .bind(lycra_color_id)
             .fetch_optional(db)

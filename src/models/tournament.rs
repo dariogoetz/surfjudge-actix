@@ -17,14 +17,14 @@ pub struct Tournament {
 
 
 impl Tournament {
-    pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<Tournament>> {
+    pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<Self>> {
         let tournaments = sqlx::query_as::<_, Tournament>(r#"SELECT * FROM tournaments"#)
             .fetch_all(db)
             .await?;
         Ok(tournaments)
     }
 
-    pub async fn find_by_id(db: &Pool, tournament_id: u32) -> anyhow::Result<Option<Tournament>> {
+    pub async fn find_by_id(db: &Pool, tournament_id: u32) -> anyhow::Result<Option<Self>> {
         let tournament = sqlx::query_as::<_, Tournament>(r#"SELECT * FROM tournaments WHERE id = $1"#)
             .bind(tournament_id)
             .fetch_optional(db)

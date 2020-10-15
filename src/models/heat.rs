@@ -40,7 +40,7 @@ pub struct Heat {
 }
 
 impl From<HeatCore> for Heat {
-    fn from(heat: HeatCore) -> Self {
+    fn from(heat: HeatCore) -> Heat {
         Heat {
             id: heat.id,
             category_id: heat.category_id,
@@ -69,19 +69,16 @@ pub enum HeatType {
 
 impl Heat {
     async fn expand(mut self, db: &Pool) -> Self {
-        //let cat_fut = Category::find_by_id(&db, heat.category_id as u32).await.unwrap_or(None);
-        //let part_fut = Participation::find_by_heat_id(&db, heat.id as u32).await.unwrap_or(None);
-        //let pair = future::join(cat_fut, part_fut).await;
-        //self.category = cat_fut;
-        //self.participations = Some(part_fut);
+        //self.category = Category::find_by_id(&db, self.category_id as u32).await.unwrap_or(None);
+        self.participations = Participation::find_by_heat_id(&db, self.id as u32, false).await.ok();
         self
     }
 
-    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Heat>> {
+    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
         let heats = sqlx::query_as::<_, HeatCore>(r#"SELECT * FROM heats"#)
             .fetch_all(db)
             .await?
-            .into_iter().map(|c| Heat::from(c));
+            .into_iter().map(|c| Self::from(c));
 
         let heats = match expand {
             true => {
@@ -92,12 +89,12 @@ impl Heat {
         Ok(heats)
     }
 
-    pub async fn find_by_id(db: &Pool, heat_id: u32, expand: bool) -> anyhow::Result<Option<Heat>> {
+    pub async fn find_by_id(db: &Pool, heat_id: u32, expand: bool) -> anyhow::Result<Option<Self>> {
         let mut heat = sqlx::query_as::<_, HeatCore>(r#"SELECT * FROM heats WHERE id = $1"#)
             .bind(heat_id)
             .fetch_optional(db)
             .await?
-            .map(|c| Heat::from(c));
+            .map(|c| Self::from(c));
 
         if expand {
             heat = match heat {
@@ -109,7 +106,7 @@ impl Heat {
     }
 
 
-    pub async fn find_active_heats_by_tournament_id(db: &Pool, tournament_id: u32, expand:bool) -> anyhow::Result<Vec<Heat>> {
+    pub async fn find_active_heats_by_tournament_id(db: &Pool, tournament_id: u32, expand:bool) -> anyhow::Result<Vec<Self>> {
         let heats = sqlx::query_as::<_, HeatCore>(
             r#"
 SELECT h.*
@@ -125,7 +122,7 @@ ON h.category_id = c.id
             .bind(tournament_id)
             .fetch_all(db)
             .await?
-            .into_iter().map(|h| Heat::from(h));
+            .into_iter().map(|h| Self::from(h));
 
         let heats = match expand {
             true => {

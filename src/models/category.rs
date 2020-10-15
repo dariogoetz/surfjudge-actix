@@ -26,7 +26,7 @@ pub struct Category {
 }
 
 impl From <CategoryCore> for Category {
-    fn from(category: CategoryCore) -> Self {
+    fn from(category: CategoryCore) -> Category {
         Category {
             id: category.id,
             tournament_id: category.tournament_id,
@@ -44,29 +44,28 @@ impl Category {
         self
     }
 
-    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Category>> {
+    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
         let categories = sqlx::query_as::<_, CategoryCore>(r#"SELECT * FROM categories"#)
             .fetch_all(db)
             .await?
-            .into_iter().map(|c| Category::from(c));
+            .into_iter().map(|c| Self::from(c));
 
         let categories = match expand {
             true => {
-                future::join_all(categories.map(|category|{ category.expand(&db) })).await
+                future::join_all(categories.map(|c|{ c.expand(&db) })).await
             },
             false => categories.collect(),
         };
         Ok(categories)
     }
 
-    pub async fn find_by_id(db: &Pool, category_id: u32, expand: bool) -> anyhow::Result<Option<Category>> {
+    pub async fn find_by_id(db: &Pool, category_id: u32, expand: bool) -> anyhow::Result<Option<Self>> {
         let mut category = sqlx::query_as::<_, CategoryCore>(r#"SELECT * FROM categories WHERE id = $1"#)
             .bind(category_id)
             .fetch_optional(db)
             .await?
-            .map(|c| Category::from(c));
+            .map(|c| Self::from(c));
 
-        // todo: expand?
         if expand {
             category = match category {
                 Some(c) => Some(c.expand(&db).await),
@@ -76,18 +75,18 @@ impl Category {
         Ok(category)
     }
 
-    pub async fn find_by_tournament_id(db: &Pool, tournament_id: u32, expand: bool) -> anyhow::Result<Vec<Category>> {
+    pub async fn find_by_tournament_id(db: &Pool, tournament_id: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
         let categories = sqlx::query_as::<_, CategoryCore>(
             r#"SELECT c.* FROM categories c INNER JOIN tournaments t ON c.tournament_id = t.id WHERE t.id = $1"#
         )
             .bind(tournament_id)
             .fetch_all(db)
             .await?
-            .into_iter().map(|c| Category::from(c));
+            .into_iter().map(|c| Self::from(c));
 
         let categories = match expand {
             true => {
-                future::join_all(categories.map(|category|{ category.expand(&db) })).await
+                future::join_all(categories.map(|c|{ c.expand(&db) })).await
             },
             false => categories.collect(),
         };
