@@ -18,7 +18,7 @@ pub struct Tournament {
 
 impl Tournament {
     pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<Tournament>> {
-        let tournaments = sqlx::query_as::<_, Tournament>(r#"SELECT * FROM tournaments ORDER BY id"#)
+        let tournaments = sqlx::query_as::<_, Tournament>(r#"SELECT * FROM tournaments"#)
             .fetch_all(db)
             .await?;
         Ok(tournaments)

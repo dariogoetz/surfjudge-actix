@@ -16,7 +16,7 @@ pub struct Surfer {
 
 impl Surfer {
     pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<Surfer>> {
-        let surfers = sqlx::query_as::<_, Surfer>(r#"SELECT * FROM surfers ORDER BY id"#)
+        let surfers = sqlx::query_as::<_, Surfer>(r#"SELECT * FROM surfers"#)
             .fetch_all(db)
             .await?;
         Ok(surfers)

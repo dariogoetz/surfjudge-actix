@@ -15,7 +15,7 @@ pub struct LycraColor {
 
 impl LycraColor {
     pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<LycraColor>> {
-        let lycra_colors = sqlx::query_as::<_, LycraColor>(r#"SELECT * FROM lycra_colors ORDER BY id"#)
+        let lycra_colors = sqlx::query_as::<_, LycraColor>(r#"SELECT * FROM lycra_colors"#)
             .fetch_all(db)
             .await?;
         Ok(lycra_colors)

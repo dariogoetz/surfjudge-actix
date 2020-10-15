@@ -1,5 +1,5 @@
 use crate::database::Pool;
-use crate::models::{heat::Heat, surfer::Surfer, lycra_color::LycraColor};
+use crate::models::{surfer::Surfer, lycra_color::LycraColor};
 
 use futures::future;
 
@@ -22,7 +22,7 @@ pub struct Participation {
     pub heat_id: i32,
     pub lycra_color_id: i32,
     pub seed: i32,
-    pub heat: Option<Heat>,
+    //pub heat: Option<Heat>,
     pub surfer: Option<Surfer>,
     pub lycra_color: Option<LycraColor>,
 }
@@ -34,7 +34,7 @@ impl From<ParticipationCore> for Participation {
             heat_id: participation.heat_id,
             lycra_color_id: participation.lycra_color_id,
             seed: participation.seed,
-            heat: None,
+            //heat: None,
             surfer: None,
             lycra_color: None,
         }
@@ -55,7 +55,7 @@ async fn expand(db: &Pool, participation_core: ParticipationCore) -> anyhow::Res
 
 impl Participation {
     pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<Participation>> {
-        let participations_core = sqlx::query_as::<_, ParticipationCore>(r#"SELECT * FROM participations ORDER BY heat_id"#)
+        let participations_core = sqlx::query_as::<_, ParticipationCore>(r#"SELECT * FROM participations"#)
             .fetch_all(db)
             .await?;
 
