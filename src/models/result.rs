@@ -56,36 +56,40 @@ impl Result {
         //self.heat = Heat::find_by_id(&db, self.heat_id as u32, false).await.unwrap_or(None);
         self
     }
-    
-    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
-        let results = sqlx::query_as::<_, ResultCore>(r#"SELECT * FROM results"#)
+
+    async fn expand_vec(db: &Pool, v: impl std::iter::Iterator<Item=Self>, expand: bool) -> Vec<Self> {
+        match expand {
+            true => {
+                future::join_all(v.map(|r|{ r.expand(&db) })).await
+            },
+            false => v.collect(),
+        }
+    }
+
+    async fn find_vec(db: &Pool, query: &'static str, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let res = sqlx::query_as::<_, ResultCore>(query)
             .fetch_all(db)
             .await?
             .into_iter().map(|r| Self::from(r));
+        Ok(Self::expand_vec(&db, res, expand).await)
+    }
 
-        let results = match expand {
-            true => {
-                future::join_all(results.map(|r|{ r.expand(&db) })).await
-            },
-            false => results.collect(),
-        };
-        Ok(results)
+    async fn find_vec_bind(db: &Pool, query: &'static str, value: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let res = sqlx::query_as::<_, ResultCore>(query)
+            .bind(value)
+            .fetch_all(db)
+            .await?
+            .into_iter().map(|r| Self::from(r));
+        Ok(Self::expand_vec(&db, res, expand).await)
+    }
+
+    
+    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
+        Self::find_vec(&db, r#"SELECT * FROM results"#, expand).await
     }
 
 
     pub async fn find_by_heat_id(db: &Pool, heat_id: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
-        let results = sqlx::query_as::<_, ResultCore>(r#"SELECT * FROM results WHERE heat_id = $1"#)
-            .bind(heat_id)
-            .fetch_all(db)
-            .await?
-            .into_iter().map(|r| Self::from(r));
-
-        let results = match expand {
-            true => {
-                future::join_all(results.map(|r|{ r.expand(&db) })).await
-            },
-            false => results.collect(),
-        };
-        Ok(results)
+        Self::find_vec_bind(&db, r#"SELECT * FROM results WHERE heat_id = $1"#, heat_id, expand).await
     }
 }

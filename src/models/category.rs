@@ -44,52 +44,68 @@ impl Category {
         self
     }
 
-    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
-        let categories = sqlx::query_as::<_, CategoryCore>(r#"SELECT * FROM categories"#)
-            .fetch_all(db)
-            .await?
-            .into_iter().map(|c| Self::from(c));
-
-        let categories = match expand {
-            true => {
-                future::join_all(categories.map(|c|{ c.expand(&db) })).await
-            },
-            false => categories.collect(),
-        };
-        Ok(categories)
+    async fn expand_option(db: &Pool, v: Option<Self>,  expand: bool) -> Option<Self> {
+        if expand {
+            return match v {
+                Some(val) => Some(val.expand(&db).await),
+                None => None
+            };
+        } else {
+            return v
+        }
     }
 
-    pub async fn find_by_id(db: &Pool, category_id: u32, expand: bool) -> anyhow::Result<Option<Self>> {
-        let mut category = sqlx::query_as::<_, CategoryCore>(r#"SELECT * FROM categories WHERE id = $1"#)
-            .bind(category_id)
+    async fn expand_vec(db: &Pool, v: impl std::iter::Iterator<Item=Self>, expand: bool) -> Vec<Self> {
+        match expand {
+            true => {
+                future::join_all(v.map(|r|{ r.expand(&db) })).await
+            },
+            false => v.collect(),
+        }
+    }
+
+    async fn find_option_bind(db: &Pool, query: &'static str, value: u32, expand: bool) -> anyhow::Result<Option<Self>> {
+        let res = sqlx::query_as::<_, CategoryCore>(query)
+            .bind(value)
             .fetch_optional(db)
             .await?
             .map(|c| Self::from(c));
 
-        if expand {
-            category = match category {
-                Some(c) => Some(c.expand(&db).await),
-                None => None,
-            };
-        }
-        Ok(category)
+        Ok(Self::expand_option(&db, res, expand).await)
+    }
+
+    async fn find_vec(db: &Pool, query: &'static str, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let res = sqlx::query_as::<_, CategoryCore>(query)
+            .fetch_all(db)
+            .await?
+            .into_iter().map(|r| Self::from(r));
+        Ok(Self::expand_vec(&db, res, expand).await)
+    }
+
+    async fn find_vec_bind(db: &Pool, query: &'static str, value: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let res = sqlx::query_as::<_, CategoryCore>(query)
+            .bind(value)
+            .fetch_all(db)
+            .await?
+            .into_iter().map(|r| Self::from(r));
+        Ok(Self::expand_vec(&db, res, expand).await)
+    }
+
+    
+    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
+        Self::find_vec(&db, r#"SELECT * FROM categories"#, expand).await
+    }
+
+    pub async fn find_by_id(db: &Pool, category_id: u32, expand: bool) -> anyhow::Result<Option<Self>> {
+        Self::find_option_bind(&db, r#"SELECT * FROM categories WHERE id = $1"#, category_id, expand).await
     }
 
     pub async fn find_by_tournament_id(db: &Pool, tournament_id: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
-        let categories = sqlx::query_as::<_, CategoryCore>(
-            r#"SELECT c.* FROM categories c INNER JOIN tournaments t ON c.tournament_id = t.id WHERE t.id = $1"#
-        )
-            .bind(tournament_id)
-            .fetch_all(db)
-            .await?
-            .into_iter().map(|c| Self::from(c));
-
-        let categories = match expand {
-            true => {
-                future::join_all(categories.map(|c|{ c.expand(&db) })).await
-            },
-            false => categories.collect(),
-        };
-        Ok(categories)
+        Self::find_vec_bind(
+            &db,
+            r#"SELECT c.* FROM categories c INNER JOIN tournaments t ON c.tournament_id = t.id WHERE t.id = $1"#,
+            tournament_id,
+            expand
+        ).await
     }
 }

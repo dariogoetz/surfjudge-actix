@@ -50,34 +50,38 @@ impl Participation {
         self
     }
 
-    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
-        let participations = sqlx::query_as::<_, ParticipationCore>(r#"SELECT * FROM participations"#)
+    async fn expand_vec(db: &Pool, v: impl std::iter::Iterator<Item=Self>, expand: bool) -> Vec<Self> {
+        match expand {
+            true => {
+                future::join_all(v.map(|r|{ r.expand(&db) })).await
+            },
+            false => v.collect(),
+        }
+    }
+
+    async fn find_vec(db: &Pool, query: &'static str, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let res = sqlx::query_as::<_, ParticipationCore>(query)
             .fetch_all(db)
             .await?
-            .into_iter().map(|p| Self::from(p));
+            .into_iter().map(|r| Self::from(r));
+        Ok(Self::expand_vec(&db, res, expand).await)
+    }
 
-        let participations = match expand {
-            true => {
-                future::join_all(participations.map(|p|{ p.expand(&db) })).await
-            },
-            false => participations.collect(),
-        };
-        Ok(participations)
+    async fn find_vec_bind(db: &Pool, query: &'static str, value: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let res = sqlx::query_as::<_, ParticipationCore>(query)
+            .bind(value)
+            .fetch_all(db)
+            .await?
+            .into_iter().map(|r| Self::from(r));
+        Ok(Self::expand_vec(&db, res, expand).await)
+    }
+
+    
+    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
+        Self::find_vec(&db, r#"SELECT * FROM participations"#, expand).await
     }
 
     pub async fn find_by_heat_id(db: &Pool, heat_id: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
-        let participations = sqlx::query_as::<_, ParticipationCore>(r#"SELECT * FROM participations WHERE heat_id = $1"#)
-            .bind(heat_id)
-            .fetch_all(db)
-            .await?
-            .into_iter().map(|p| Self::from(p));
-
-        let participations = match expand {
-            true => {
-                future::join_all(participations.map(|p|{ p.expand(&db) })).await
-            },
-            false => participations.collect(),
-        };
-        Ok(participations)
+        Self::find_vec_bind(&db, r#"SELECT * FROM participations WHERE heat_id = $1"#, heat_id, expand).await
     }
 }

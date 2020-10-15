@@ -74,62 +74,75 @@ impl Heat {
         self
     }
 
-    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
-        let heats = sqlx::query_as::<_, HeatCore>(r#"SELECT * FROM heats"#)
-            .fetch_all(db)
-            .await?
-            .into_iter().map(|c| Self::from(c));
-
-        let heats = match expand {
-            true => {
-                future::join_all(heats.map(|h|{ h.expand(&db) })).await
-            },
-            false => heats.collect(),
-        };
-        Ok(heats)
+    async fn expand_option(db: &Pool, v: Option<Self>,  expand: bool) -> Option<Self> {
+        if expand {
+            return match v {
+                Some(val) => Some(val.expand(&db).await),
+                None => None
+            };
+        } else {
+            return v
+        }
     }
 
-    pub async fn find_by_id(db: &Pool, heat_id: u32, expand: bool) -> anyhow::Result<Option<Self>> {
-        let mut heat = sqlx::query_as::<_, HeatCore>(r#"SELECT * FROM heats WHERE id = $1"#)
-            .bind(heat_id)
+    async fn expand_vec(db: &Pool, v: impl std::iter::Iterator<Item=Self>, expand: bool) -> Vec<Self> {
+        match expand {
+            true => {
+                future::join_all(v.map(|r|{ r.expand(&db) })).await
+            },
+            false => v.collect(),
+        }
+    }
+
+    async fn find_option_bind(db: &Pool, query: &'static str, value: u32, expand: bool) -> anyhow::Result<Option<Self>> {
+        let res = sqlx::query_as::<_, HeatCore>(query)
+            .bind(value)
             .fetch_optional(db)
             .await?
             .map(|c| Self::from(c));
 
-        if expand {
-            heat = match heat {
-                Some(h) => Some(h.expand(&db).await),
-                None => None,
-            }
-        }
-        Ok(heat)
+        Ok(Self::expand_option(&db, res, expand).await)
     }
 
+    async fn find_vec(db: &Pool, query: &'static str, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let res = sqlx::query_as::<_, HeatCore>(query)
+            .fetch_all(db)
+            .await?
+            .into_iter().map(|r| Self::from(r));
+        Ok(Self::expand_vec(&db, res, expand).await)
+    }
+
+    async fn find_vec_bind(db: &Pool, query: &'static str, value: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
+        let res = sqlx::query_as::<_, HeatCore>(query)
+            .bind(value)
+            .fetch_all(db)
+            .await?
+            .into_iter().map(|r| Self::from(r));
+        Ok(Self::expand_vec(&db, res, expand).await)
+    }
+    
+
+    pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
+        Self::find_vec(&db, r#"SELECT * FROM heats"#, expand).await
+    }
+
+    pub async fn find_by_id(db: &Pool, heat_id: u32, expand: bool) -> anyhow::Result<Option<Self>> {
+        Self::find_option_bind(&db, r#"SELECT * FROM heats WHERE id = $1"#, heat_id, expand).await
+    }
 
     pub async fn find_active_heats_by_tournament_id(db: &Pool, tournament_id: u32, expand:bool) -> anyhow::Result<Vec<Self>> {
-        let heats = sqlx::query_as::<_, HeatCore>(
+        Self::find_vec_bind(
+            &db, 
             r#"
 SELECT h.*
 FROM heats h
 INNER JOIN categories c
 ON h.category_id = c.id
-  INNER JOIN tournaments t
-  ON c.tournament_id = t.id
-    INNER JOIN heat_state s
-    ON s.heat_id = h.id
-  WHERE s.state = 'active' AND t.id = $1"#
-        )
-            .bind(tournament_id)
-            .fetch_all(db)
-            .await?
-            .into_iter().map(|h| Self::from(h));
-
-        let heats = match expand {
-            true => {
-                future::join_all(heats.map(|h|{ h.expand(&db) })).await
-            },
-            false => heats.collect(),
-        };
-        Ok(heats)
+  INNER JOIN heat_state s
+  ON s.heat_id = h.id
+  WHERE s.state = 'active' AND c.tournament…id = $1"#,
+            tournament_id,
+            expand
+        ).await
     }
 }
