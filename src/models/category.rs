@@ -38,7 +38,6 @@ impl From <CategoryCore> for Category {
 }
 
 impl Category {
-
     async fn expand(mut self, db: &Pool) -> Self {
         self.tournament = Tournament::find_by_id(&db, self.tournament_id as u32).await.unwrap_or(None);
         self
@@ -91,7 +90,7 @@ impl Category {
         Ok(Self::expand_vec(&db, res, expand).await)
     }
 
-    
+
     pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
         Self::find_vec(&db, r#"SELECT * FROM categories"#, expand).await
     }

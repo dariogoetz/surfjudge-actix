@@ -89,7 +89,4 @@ impl HeatAdvancement {
     pub async fn find_by_from_heat_id(db: &Pool, value: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
         Self::find_vec_bind(&db, r#"SELECT * FROM heat_advancements WHERE from_heat_id = $1"#, value, expand).await
     }
-
-
-    // TODO: get advancing surfers
 }

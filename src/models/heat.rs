@@ -120,7 +120,7 @@ impl Heat {
             .into_iter().map(|r| Self::from(r));
         Ok(Self::expand_vec(&db, res, expand).await)
     }
-    
+
 
     pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
         Self::find_vec(&db, r#"SELECT * FROM heats"#, expand).await
@@ -132,7 +132,7 @@ impl Heat {
 
     pub async fn find_active_heats_by_tournament_id(db: &Pool, tournament_id: u32, expand:bool) -> anyhow::Result<Vec<Self>> {
         Self::find_vec_bind(
-            &db, 
+            &db,
             r#"
 SELECT h.*
 FROM heats h
