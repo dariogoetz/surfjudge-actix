@@ -1,5 +1,5 @@
 use crate::database::Pool;
-use crate::models::heat::Heat;
+use crate::models::{heat::Heat, surfer::Surfer};
 
 use futures::future;
 
@@ -32,6 +32,7 @@ pub struct Result {
     pub place: i32,
     pub wave_scores: Json<Vec<WaveScore>>,
     pub heat: Option<Heat>,
+    pub surfer: Option<Surfer>,
 }
 // TODO: add surfer from surfer struct
 
@@ -44,6 +45,7 @@ impl From<ResultCore> for Result {
             place: result.place,
             wave_scores: result.wave_scores,
             heat: None,
+            surfer: None,
         }
     }
 }
@@ -54,6 +56,7 @@ impl Result {
         // getting the heat leads to a lot of overhead
         // because the heat gets the category and the category gets the tournament
         //self.heat = Heat::find_by_id(&db, self.heat_id as u32, false).await.unwrap_or(None);
+        self.surfer = Surfer::find_by_id(&db, self.surfer_id as u32).await.unwrap_or(None);
         self
     }
 
