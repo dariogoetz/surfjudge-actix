@@ -1,5 +1,5 @@
 use crate::database::Pool;
-use crate::models::{category::Category, participation::Participation};
+use crate::models::participation::Participation; //{category::Category, participation::Participation};
 
 use futures::future;
 
@@ -35,7 +35,7 @@ pub struct Heat {
     pub duration: f64,
     pub heat_type: HeatType,
     pub additional_info: String,
-    pub category: Option<Category>,
+    //pub category: Option<Category>,
     pub participations: Option<Vec<Participation>>,
 }
 
@@ -52,7 +52,7 @@ impl From<HeatCore> for Heat {
             duration: heat.duration,
             heat_type: heat.heat_type,
             additional_info: heat.additional_info,
-            category: None,
+            //category: None,
             participations: None,
 
         }
@@ -69,7 +69,7 @@ pub enum HeatType {
 
 impl Heat {
     async fn expand(mut self, db: &Pool) -> Self {
-        self.category = Category::find_by_id(&db, self.category_id as u32, false).await.unwrap_or(None);
+        //self.category = Category::find_by_id(&db, self.category_id as u32, false).await.unwrap_or(None);
         self.participations = Participation::find_by_heat_id(&db, self.id as u32, true).await.ok();
         self
     }
