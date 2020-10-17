@@ -14,6 +14,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
         web::scope("/rest")
             .route("/heats", web::get().to(heat::get_all))
             .route("/heats/{id}", web::get().to(heat::get_by_id))
+            .route("/active_heats", web::get().to(heat::get_active_heats))
             .route("/active_heats/{tournament_id}", web::get().to(heat::get_active_heats_by_tournament_id))
 
             .route("/categories", web::get().to(category::get_all))

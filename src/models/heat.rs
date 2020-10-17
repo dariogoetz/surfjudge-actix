@@ -144,8 +144,22 @@ INNER JOIN categories c
 ON h.category_id = c.id
   INNER JOIN heat_state s
   ON s.heat_id = h.id
-  WHERE s.state = 'active' AND c.tournament…id = $1"#,
+  WHERE s.state = 'active' AND c.tournament_id = $1"#,
             tournament_id,
+            expand
+        ).await
+    }
+
+    pub async fn find_active_heats(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
+        Self::find_vec(
+            &db,
+            r#"
+SELECT h.*
+FROM heats h
+INNER JOIN heat_state s
+ON s.heat_id = h.id
+WHERE s.state = 'active'
+"#,
             expand
         ).await
     }
