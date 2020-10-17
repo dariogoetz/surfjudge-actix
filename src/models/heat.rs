@@ -69,8 +69,8 @@ pub enum HeatType {
 
 impl Heat {
     async fn expand(mut self, db: &Pool) -> Self {
-        //self.category = Category::find_by_id(&db, self.category_id as u32).await.unwrap_or(None);
-        //self.participations = Participation::find_by_heat_id(&db, self.id as u32, false).await.ok();
+        self.category = Category::find_by_id(&db, self.category_id as u32, false).await.unwrap_or(None);
+        self.participations = Participation::find_by_heat_id(&db, self.id as u32, true).await.ok();
         self
     }
 
