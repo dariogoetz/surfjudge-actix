@@ -130,6 +130,10 @@ impl Heat {
         Self::find_option_bind(&db, r#"SELECT * FROM heats WHERE id = $1"#, heat_id, expand).await
     }
 
+    pub async fn find_by_category_id(db: &Pool, category_id: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
+        Self::find_vec_bind(&db, r#"SELECT * FROM heats WHERE category_id = $1"#, category_id, expand).await
+    }
+
     pub async fn find_active_heats_by_tournament_id(db: &Pool, tournament_id: u32, expand:bool) -> anyhow::Result<Vec<Self>> {
         Self::find_vec_bind(
             &db,
