@@ -42,60 +42,12 @@
 	    </div>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav mr-auto">
-                     {% if not global_is_judge or global_is_admin %}
                     <li class="nav-item" id='nav_item_live_results'><a class="nav-link" href="/live_results"><span class="fa fa-align-left"></span>&nbsp;Live Results</a></li>
                     <li class="nav-item" id='nav_item_heatcharts'><a class="nav-link" href="/heatcharts"><span class="fa fa-project-diagram"></span>&nbsp;Heatcharts</a></li>
-                    <li class="nav-item" id='nav_item_results_details'><a class="nav-link" href="/results/details"><span class="fa fa-list"></span>&nbsp;Results</a></li>
-                    {% endif %}
-
-                     {% if global_is_admin %}
-                    <li class="nav-item" id='nav_item_results'><a class="nav-link" href="/results"><span class="fa fa-list"></span>&nbsp;Results (compact)</a></li>
-                    <li class="nav-item" id='nav_item_results_finals'><a class="nav-link" href="/results/finals"><span class="fa fa-list"></span>&nbsp;Finals</a></li>
-                    {% endif %}
-
-                    {% if not global_logged_in %}
-                    <li class="nav-item" id='nav_item_login'><a class="nav-link" href="/auth/login"><span class="fa fa-play-circle"></span>&nbsp;Login</a></li>
-                    {% endif %}
-                    {% if False %} <!-- This is commented out because we decided to hide the register button. -->
-                    <li class="nav-item" id='nav_item_register'><a class="nav-link" href="/auth/register"><span class="fa fa-eye"></span>&nbsp;Register</a></li>
-                    {% endif %}
-                    {% if global_is_judge %}
-                    <li class="nav-item" id='nav_item_judge_tools'><a class="nav-link" href="/judge_sheet"><span class="fa fa-list-alt"></span>&nbsp;Judge Sheet</a></li>
-                    {% endif %}
-                    {% if global_is_commentator %}
-                    <li class="nav-item" id='nav_item_commentator_panel'><a class="nav-link" href="/commentator"><span class="fa fa-comments"></span>&nbsp;Commentator</a></li>
-                    {% endif %}
-                    {% if global_is_headjudge %}
-                    {% endif %}
-                    {% if global_is_admin %}
-                    <li class="nav-item" id='nav_item_heat_overview'><a class="nav-link" href="/heat_overview"><span class="fa fa-home"></span>&nbsp;Heat Overview</a></li>
-                    <li class="nav-item" id='nav_item_edit_scores'><a class="nav-link" href="/edit_scores"><span class="fa fa-edit"></span>&nbsp;Edit Scores</a></li>
-
-                    <li class="nav-item dropdown" id='nav_item_admin'>
-                        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="fa fa-cog"></span>&nbsp;Admin<span class="caret"></span></a>
-                        <div class="dropdown-menu">
-
-                            <a class="dropdown-item" href="/edit_tournaments">Tournaments<span class="sr-only"></span></a>
-                            <a class="dropdown-item" href="/edit_categories">Categories and Heats<span class="sr-only"></span></a>
-                            <div class="dropdown-divider"></div>
-
-                            <a class="dropdown-item" href="/edit_surfers">Surfers<span class="sr-only"></span></a>
-                            <a class="dropdown-item" href="/edit_logins">Logins<span class="sr-only"></span></a>
-                            <a class="dropdown-item" href="/edit_lycra_colors">Lycra Colors<span class="sr-only"></span></a>
-                            {% if False %} <!-- This is commented out because we decided to hide the register button. -->
-                            <a class="dropdown-item" href="/auth/register">Register<span class="sr-only"></span></a>
-                            {% endif %}
+                    <li class="nav-item" id='nav_item_results'><a class="nav-link" href="/results"><span class="fa fa-list"></span>&nbsp;Results</a></li>
                         </div>
                     </li>
-                    <!-- <li class="nav-item" id='nav_item_register'><a class="nav-link" href="/auth/register"><span class="fa fa-eye"></span>&nbsp;Register</a></li> -->
-                    {% endif %}
                 </ul>
-                {% if global_logged_in %}
-                <ul class="navbar-nav mr-auto">
-                    <li class="nav-item"><a class="nav-link"><span class="fa fa-user"></span>&nbsp;{{ global_username }}</a></li>
-                    <li class="nav-item" id='nav_item_logout'><a class="nav-link" href="/auth/logout"><span class="fa fa-power-off"></span>&nbsp;Logout</a></li>
-                </ul>
-                {% endif %}
             </div>
     </nav>
 
