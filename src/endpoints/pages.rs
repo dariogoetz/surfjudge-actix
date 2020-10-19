@@ -6,11 +6,6 @@ use actix_web::{error, web, Responder, HttpResponse};
 
 pub fn get_default_template_context() -> Context {
     let mut ctx = Context::new();
-    ctx.insert("global_is_judge", &false);
-    ctx.insert("global_is_admin", &false);
-    ctx.insert("global_is_commentator", &false);
-    ctx.insert("global_is_headjudge", &false);
-    ctx.insert("global_logged_in", &false);
     ctx.insert("description", &"Surfjudge - actix");
     ctx.insert("websocket_url", &CONFIG.websocket_url);
 
