@@ -5,6 +5,7 @@ use sloggers::Build;
 use anyhow::Result;
 
 use actix_web::{middleware::Logger, App, HttpServer};
+use actix_cors::Cors;
 
 mod configuration;
 mod database;
@@ -29,6 +30,9 @@ async fn main() -> Result<()> {
     let server = HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
+            .wrap(Cors::new()  // enable cors for frontend development with webpack dev server
+                  .finish()
+            )
             .configure(routes::routes)
             .data(pool.clone())
             .data(tmpl.clone())
