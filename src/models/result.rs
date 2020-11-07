@@ -95,4 +95,18 @@ impl Result {
     pub async fn find_by_heat_id(db: &Pool, heat_id: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
         Self::find_vec_bind(&db, r#"SELECT * FROM results WHERE heat_id = $1"#, heat_id, expand).await
     }
+
+    pub async fn find_by_category_id(db: &Pool, category_id: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
+        Self::find_vec_bind(
+            &db,
+            r#"
+SELECT *
+FROM results r
+JOIN heats h
+ON h.id = r.heat_id
+WHERE h.category_id = $1"#,
+            category_id,
+            expand
+        ).await
+    }
 }
