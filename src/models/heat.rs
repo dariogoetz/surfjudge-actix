@@ -19,7 +19,7 @@ pub struct HeatCore {
     pub number_of_waves: i32,
     pub duration: f64,
     pub heat_type: HeatType,
-    pub additional_info: String,
+    pub additional_info: Option<String>,
 }
 
 // this struct will be used to represent database record
@@ -34,7 +34,7 @@ pub struct Heat {
     pub number_of_waves: i32,
     pub duration: f64,
     pub heat_type: HeatType,
-    pub additional_info: String,
+    pub additional_info: Option<String>,
     //pub category: Option<Category>,
     pub participations: Option<Vec<Participation>>,
 }
