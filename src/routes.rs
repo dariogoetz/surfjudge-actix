@@ -26,11 +26,12 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
             .route("/categories/{id}/advancements", web::get().to(heat_advancement::get_by_category_id))
             .route("/categories/{id}/results", web::get().to(result::get_by_category_id))
             .route("/categories/{id}/participations", web::get().to(participation::get_by_category_id))
+            .route("/categories/{id}/active_heats", web::get().to(heat::get_active_heats_by_category_id))
 
             .route("/tournaments", web::get().to(tournament::get_all))
             .route("/tournaments/{id}", web::get().to(tournament::get_by_id))
             .route("/tournaments/{id}/categories", web::get().to(category::get_by_tournament_id))
-            .route("/tournaments/{tournament_id}/active_heats", web::get().to(heat::get_active_heats_by_tournament_id))
+            .route("/tournaments/{id}/active_heats", web::get().to(heat::get_active_heats_by_tournament_id))
 
             .route("/results", web::get().to(result::get_all))
             .route("/results/{heat_id}", web::get().to(result::get_by_heat_id))

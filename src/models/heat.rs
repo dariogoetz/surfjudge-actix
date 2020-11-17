@@ -134,6 +134,20 @@ impl Heat {
         Self::find_vec_bind(&db, r#"SELECT * FROM heats WHERE category_id = $1"#, category_id, expand).await
     }
 
+    pub async fn find_active_heats_by_category_id(db: &Pool, category_id: u32, expand:bool) -> anyhow::Result<Vec<Self>> {
+        Self::find_vec_bind(
+            &db,
+            r#"
+SELECT h.*
+FROM heats h
+INNER JOIN heat_state s
+ON s.heat_id = h.id
+WHERE s.state = 'active' AND h.category_id = $1"#,
+            category_id,
+            expand
+        ).await
+    }
+    
     pub async fn find_active_heats_by_tournament_id(db: &Pool, tournament_id: u32, expand:bool) -> anyhow::Result<Vec<Self>> {
         Self::find_vec_bind(
             &db,
