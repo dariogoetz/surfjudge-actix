@@ -2,8 +2,7 @@ use crate::database::Pool;
 use crate::models::{heat::Heat, lycra_color::LycraColor};
 
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Row};
-use futures::TryStreamExt;
+use sqlx::FromRow;
 
 // this struct will be used to represent database record
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -39,37 +38,5 @@ impl Surfer {
             .fetch_optional(db)
             .await?;
         Ok(surfer)
-    }
-
-    pub async fn find_surfers_advancing_to_heat(db: &Pool, heat_id: u32) -> anyhow::Result<Vec<AdvancingSurfer>> {
-        let mut rows = sqlx::query(
-            r#"SELECT r.surfer_id, r.heat_id, adv.seed
-            FROM surfers s
-                INNER JOIN results r
-                ON s.id = r.surfer_id
-                    INNER JOIN heat_advancements adv
-                    ON adv.to_heat_id = r.heat_id
-            WHERE adv.to_heat_id = $1"#
-        )
-            .bind(heat_id)
-            .fetch(db);
-
-        let mut advs = Vec::new();
-        while let Some(row) = rows.try_next().await? {
-            let mut adv = AdvancingSurfer {
-                surfer_id: row.try_get("surfer_id")?,
-                heat_id: row.try_get("heat_id")?,
-                seed: row.try_get("seed")?,
-                surfer: None,
-                heat: None,
-                lycra_color: None,
-            };
-            adv.heat = Heat::find_by_id(&db, adv.heat_id as u32, false).await.unwrap_or(None);
-            adv.surfer = Surfer::find_by_id(&db, adv.surfer_id as u32).await.unwrap_or(None);
-            advs.push(adv);
-        }
-
-        // TODO: fix lycra color if heat is a call
-        Ok(advs)
     }
 }

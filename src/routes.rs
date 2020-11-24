@@ -54,9 +54,6 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
     // web page endpoints
     cfg.service(
         web::scope("")
-            .route("/", web::get().to(pages::live_results))
-            .route("/results", web::get().to(pages::results))
-            .route("/live_results", web::get().to(pages::live_results))
-            .route("/heatcharts", web::get().to(pages::heatcharts))
+            .route("/", web::get().to(pages::index))
     );
 }
