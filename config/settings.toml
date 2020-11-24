@@ -1,7 +1,10 @@
 debug = false
 server_address = "127.0.0.1:8081"
 template_dir = "templates"
+
+[ui_settings]
 websocket_url = "ws://localhost:6544"
+url_base = "http://localhost:8081"
 
 [database]
 url = "postgresql://postgres:surfjudge2000@localhost:5432/postgres"

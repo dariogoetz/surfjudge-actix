@@ -1,14 +1,20 @@
 use config::{Config, File, Environment};
 use dotenv::dotenv;
 use once_cell::sync::Lazy;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use std::env;
 
-// not sure exactly, but I thing because we use CONFIG as a global object, all the settings fields need to be pub
+// not sure exactly why, but I think because we use CONFIG as a global object, all the settings fields need to be pub
 #[derive(Deserialize, Debug)]
 pub struct Database {
     pub url: String,
     pub max_connections: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct UISettings {
+    pub websocket_url: String,
+    pub url_base: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -16,8 +22,8 @@ pub struct Settings {
     pub debug: String,
     pub server_address: String,
     pub database: Database,
+    pub ui_settings: UISettings,
     pub template_dir: String,
-    pub websocket_url: String,
 }
 
 pub static CONFIG: Lazy<Settings> = Lazy::new(|| {
