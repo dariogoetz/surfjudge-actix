@@ -14,7 +14,6 @@ pub struct Database {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UISettings {
     pub websocket_url: String,
-    pub url_base: String,
 }
 
 #[derive(Deserialize, Debug)]
