@@ -1,6 +1,33 @@
 version: "3"
 
 services:
+  app:
+    build: .
+    image: surfjudge-pyramid
+    restart: unless-stopped
+    networks:
+      - default
+    environment:
+      - APP_DATABASE_URL=postgresql://postgres:surfjudge2000@postgres:5432/postgres
+      - APP_SERVERADDRESS=0.0.0.0:8081
+      - APP_UISETTINGS_APIPATH=/public
+      - APP_UISETTINGS_WEBSOCKETURL=wss://websocket.surfjudge.de
+
+  nginx:
+    image: nginx
+    restart: unless-stopped
+    # only open the following ports in case this service is the main entrypoint
+    # on the server, in particular not in a docker-gen (jwilder) setup
+    ports:
+        - 80:80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/www/data/static:ro
+      - ./templates/index.html:/www/data/index.html:ro
+
+    networks:
+      - default
+ 
   postgres:
     image: postgres
     restart: unless-stopped
