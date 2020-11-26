@@ -12,6 +12,11 @@ services:
       - APP_SERVER_ADDRESS=0.0.0.0:8081
       - APP_UI_SETTINGS__API_PATH=/public
       - APP_UI_SETTINGS__WEBSOCKET_URL=wss://websocket.surfjudge.de
+    volumes:
+      - ./static:/app/static:ro
+      - ./templates:/app/templates:ro
+      - ./config:/app/config:ro
+      - ./target/x86_64-unknown-linux-musl/release/surfjudge-actix:/app/surfjudge-actix:ro
 
   nginx:
     image: nginx
