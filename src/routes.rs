@@ -1,3 +1,4 @@
+use crate::configuration::CONFIG;
 use crate::endpoints::{config, heat, category, tournament, result, participation, surfer, lycra_color, heat_advancement, pages};
 
 use actix_web::web;
@@ -11,7 +12,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
 
     // rest API endpoints
     cfg.service(
-        web::scope("/rest")
+        web::scope(&CONFIG.ui_settings.api_path)
             .route("/config", web::get().to(config::get_ui_config))
             
             .route("/heats", web::get().to(heat::get_all))

@@ -41,6 +41,7 @@ async fn main() -> Result<()> {
     .bind(&CONFIG.server_address)?;
 
     info!(logger, "Starting server at {:?}", CONFIG.server_address);
+    info!(logger, "Serving api on {:?}", CONFIG.ui_settings.api_path);
     server.run().await?;
 
     Ok(())

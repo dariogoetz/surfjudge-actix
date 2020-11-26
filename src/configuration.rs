@@ -14,6 +14,7 @@ pub struct Database {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UISettings {
     pub websocket_url: String,
+    pub api_path: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -36,8 +37,8 @@ pub static CONFIG: Lazy<Settings> = Lazy::new(|| {
         // Add in `./conf/settings.toml`
         .merge(File::with_name("config/settings"))
         .unwrap()
-        // Add in `./conf/development.toml` or `./conf/production.toml`, depending on RUN_MODE
-        .merge(File::with_name(&format!("conf/{}", run_mode)).required(false))
+        // Add in `./config/development.toml` or `./config/production.toml`, depending on RUN_MODE
+        .merge(File::with_name(&format!("config/{}", run_mode)).required(false))
         .unwrap()
         // Add in settings from the environment (with a prefix of APP)
         // Eg.. `APP_DEBUG=1 ./target/app` would set the `debug` key

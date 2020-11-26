@@ -4,6 +4,7 @@ template_dir = "templates"
 
 [ui_settings]
 websocket_url = "wss://websocket.surfjudge.de"
+api_path = "/public"
 
 [database]
 url = "postgresql://postgres:surfjudge2000@localhost:5432/postgres"
