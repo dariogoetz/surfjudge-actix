@@ -11,7 +11,7 @@ pub type Pool = PgPool;
 pub async fn get_pool() -> Result<Pool> {
     // Create a connection pool
     let pool = PoolOptions::new()
-        .max_connections(CONFIG.database.max_connections)
+        .max_connections(CONFIG.database.maxconnections)
         .connect(&CONFIG.database.url)
         .await?;
 

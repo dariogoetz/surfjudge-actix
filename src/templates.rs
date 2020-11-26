@@ -8,7 +8,7 @@ pub type Context = tera::Context;
 
 pub async fn get_templates() -> Result<Tera> {
     let tera = tera::Tera::new(
-        &format!("{}/*", &CONFIG.template_dir)
+        &format!("{}/*", &CONFIG.templatedir)
     )?;
 
     Ok(tera)

@@ -24,7 +24,7 @@ async fn main() -> Result<()> {
     info!(logger, "Connecting to database: {:?}", CONFIG.database.url);
     let pool = database::get_pool().await?;
 
-    info!(logger, "Loading templates from {:?}", CONFIG.template_dir);
+    info!(logger, "Loading templates from {:?}", CONFIG.templatedir);
     let tmpl = templates::get_templates().await?;
 
     let server = HttpServer::new(move || {
@@ -38,10 +38,10 @@ async fn main() -> Result<()> {
             .data(pool.clone())
             .data(tmpl.clone())
     })
-    .bind(&CONFIG.server_address)?;
+    .bind(&CONFIG.serveraddress)?;
 
-    info!(logger, "Starting server at {:?}", CONFIG.server_address);
-    info!(logger, "Serving api on {:?}", CONFIG.ui_settings.api_path);
+    info!(logger, "Starting server at {:?}", CONFIG.serveraddress);
+    info!(logger, "Serving api on {:?}", CONFIG.uisettings.apipath);
     server.run().await?;
 
     Ok(())

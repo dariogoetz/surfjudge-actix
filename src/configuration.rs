@@ -8,22 +8,22 @@ use std::env;
 #[derive(Deserialize, Debug)]
 pub struct Database {
     pub url: String,
-    pub max_connections: u32,
+    pub maxconnections: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UISettings {
-    pub websocket_url: String,
-    pub api_path: String,
+    pub websocketurl: String,
+    pub apipath: String,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct Settings {
     pub debug: String,
-    pub server_address: String,
+    pub serveraddress: String,
     pub database: Database,
-    pub ui_settings: UISettings,
-    pub template_dir: String,
+    pub uisettings: UISettings,
+    pub templatedir: String,
 }
 
 pub static CONFIG: Lazy<Settings> = Lazy::new(|| {
@@ -42,7 +42,7 @@ pub static CONFIG: Lazy<Settings> = Lazy::new(|| {
         .unwrap()
         // Add in settings from the environment (with a prefix of APP)
         // Eg.. `APP_DEBUG=1 ./target/app` would set the `debug` key
-        .merge(Environment::with_prefix("APP"))
+        .merge(Environment::with_prefix("APP").separator("_"))
         .unwrap();
 
     match settings.try_into() {
