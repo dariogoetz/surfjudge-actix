@@ -12,7 +12,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
 
     // rest API endpoints
     cfg.service(
-        web::scope(&CONFIG.uisettings.apipath)
+        web::scope(&CONFIG.ui_settings.api_path)
             .route("/config", web::get().to(config::get_ui_config))
             
             .route("/heats", web::get().to(heat::get_all))

@@ -8,10 +8,10 @@ services:
     networks:
       - default
     environment:
-      - APP_DATABASE_URL=postgresql://postgres:surfjudge2000@postgres:5432/postgres
-      - APP_SERVERADDRESS=0.0.0.0:8081
-      - APP_UISETTINGS_APIPATH=/public
-      - APP_UISETTINGS_WEBSOCKETURL=wss://websocket.surfjudge.de
+      - APP_DATABASE__URL=postgresql://postgres:surfjudge2000@postgres:5432/postgres
+      - APP_SERVER_ADDRESS=0.0.0.0:8081
+      - APP_UI_SETTINGS__API_PATH=/public
+      - APP_UI_SETTINGS__WEBSOCKET_URL=wss://websocket.surfjudge.de
 
   nginx:
     image: nginx

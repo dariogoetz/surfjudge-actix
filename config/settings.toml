@@ -1,11 +1,11 @@
 debug = false
-serveraddress = "127.0.0.1:8081"
-templatedir = "templates"
+server_address = "127.0.0.1:8081"
+template_dir = "templates"
 
-[uisettings]
-websocketurl = "wss://websocket.surfjudge.de"
-apipath = "/public"
+[ui_settings]
+websocket_url = "wss://websocket.surfjudge.de"
+api_path = "/public"
 
 [database]
 url = "postgresql://postgres:surfjudge2000@localhost:5432/postgres"
-maxconnections = 100
+max_connections = 100
