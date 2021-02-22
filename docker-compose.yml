@@ -1,7 +1,7 @@
 version: "3"
 
 services:
-  app:
+  public-api:
     build: .
     image: surfjudge-actix
     restart: unless-stopped
@@ -18,7 +18,7 @@ services:
       - ./config:/app/config:ro
       - ./target/x86_64-unknown-linux-musl/release/surfjudge-actix:/app/surfjudge-actix:ro
 
-  nginx:
+  public-nginx:
     image: nginx
     restart: unless-stopped
     # only open the following ports in case this service is the main entrypoint
