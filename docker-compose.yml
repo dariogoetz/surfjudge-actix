@@ -5,8 +5,6 @@ services:
     build: .
     image: surfjudge-actix
     restart: unless-stopped
-    networks:
-      - default
     environment:
       - APP_DATABASE__URL=postgresql://postgres:surfjudge2000@postgres:5432/postgres
       - APP_SERVER_ADDRESS=0.0.0.0:8081
@@ -17,6 +15,8 @@ services:
       - ./templates:/app/templates:ro
       - ./config:/app/config:ro
       - ./target/x86_64-unknown-linux-musl/release/surfjudge-actix:/app/surfjudge-actix:ro
+    networks:
+      - default
 
   public-nginx:
     image: nginx
