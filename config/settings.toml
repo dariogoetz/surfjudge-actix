@@ -8,4 +8,4 @@ api_path = "/public"
 
 [database]
 url = "postgresql://postgres:surfjudge2000@localhost:5432/postgres"
-max_connections = 100
+max_connections = 40
