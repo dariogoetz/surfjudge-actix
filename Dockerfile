@@ -22,13 +22,13 @@ RUN groupadd $APP_USER \
     && useradd -g $APP_USER $APP_USER \
     && mkdir -p ${APP}
 
-COPY --from=builder /surfjudge-actix/target/release/surfjudge-actix ${APP}/surfjudge-actix
-ADD static /app/static
-ADD templates /app/templates
-ADD config /app/config
-
 RUN chown -R $APP_USER:$APP_USER ${APP}
 USER $APP_USER
 WORKDIR ${APP}
+
+COPY --from=builder /surfjudge-actix/target/release/surfjudge-actix ${APP}/surfjudge-actix
+ADD static ${APP}/static
+ADD templates ${APP}/templates
+ADD config ${APP}/config
 
 CMD ["./surfjudge-actix"]
