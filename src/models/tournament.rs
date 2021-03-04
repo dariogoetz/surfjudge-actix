@@ -15,7 +15,6 @@ pub struct Tournament {
     pub additional_info: Option<String>,
 }
 
-
 impl Tournament {
     pub async fn find_all(db: &Pool) -> anyhow::Result<Vec<Self>> {
         let tournaments = sqlx::query_as::<_, Tournament>(r#"SELECT * FROM tournaments"#)
@@ -25,10 +24,11 @@ impl Tournament {
     }
 
     pub async fn find_by_id(db: &Pool, tournament_id: u32) -> anyhow::Result<Option<Self>> {
-        let tournament = sqlx::query_as::<_, Tournament>(r#"SELECT * FROM tournaments WHERE id = $1"#)
-            .bind(tournament_id)
-            .fetch_optional(db)
-            .await?;
+        let tournament =
+            sqlx::query_as::<_, Tournament>(r#"SELECT * FROM tournaments WHERE id = $1"#)
+                .bind(tournament_id)
+                .fetch_optional(db)
+                .await?;
         Ok(tournament)
     }
 }

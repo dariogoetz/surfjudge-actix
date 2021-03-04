@@ -1,7 +1,7 @@
-use config::{Config, File, Environment};
+use config::{Config, Environment, File};
 use dotenv::dotenv;
 use once_cell::sync::Lazy;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::env;
 
 // not sure exactly why, but I think because we use CONFIG as a global object, all the settings fields need to be pub
@@ -29,8 +29,7 @@ pub struct Settings {
 pub static CONFIG: Lazy<Settings> = Lazy::new(|| {
     dotenv().ok();
 
-    let run_mode = env::var("RUN_MODE")
-        .unwrap_or_else(|_| {"development".into()});
+    let run_mode = env::var("RUN_MODE").unwrap_or_else(|_| "development".into());
 
     let mut settings = Config::default();
     settings

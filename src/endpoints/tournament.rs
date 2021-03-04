@@ -10,9 +10,14 @@ pub async fn get_all(db: web::Data<Pool>) -> Result<web::Json<Vec<Tournament>>> 
     Ok(web::Json(result))
 }
 
-pub async fn get_by_id(web::Path(tournament_id): web::Path<u32>, db: web::Data<Pool>) -> Result<web::Json<Option<Tournament>>> {
-    let result = Tournament::find_by_id(db.get_ref(), tournament_id).await.map_err(|e| {
-        error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
-    })?;
+pub async fn get_by_id(
+    web::Path(tournament_id): web::Path<u32>,
+    db: web::Data<Pool>,
+) -> Result<web::Json<Option<Tournament>>> {
+    let result = Tournament::find_by_id(db.get_ref(), tournament_id)
+        .await
+        .map_err(|e| {
+            error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+        })?;
     Ok(web::Json(result))
 }
