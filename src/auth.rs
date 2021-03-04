@@ -47,9 +47,13 @@ impl FromRequest for AuthenticatedUser {
 
         let sessions = sessions.unwrap().clone();
         Box::pin(async move {
-            if let Some(username) = fut.await?.identity() {
+            let identity = fut.await?;
+            if let Some(username) = identity.identity() {
                 if let Some(user) = sessions.get(&username).map(|x| x.clone()) {
                     return Ok(user);
+                } else {
+                    warn!(LOG, "Logging out user {:?} for which no session data is available!", username);
+                    identity.forget();
                 }
             };
 

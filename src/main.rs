@@ -34,7 +34,7 @@ async fn main() -> Result<()> {
             .app_data(sessions.clone())
             .wrap(Compress::default())
             .wrap(IdentityService::new(
-                CookieIdentityPolicy::new(&[0; 32])
+                CookieIdentityPolicy::new(&private_key)
                     .name("surfjudge-actix")
                     .secure(false),
             ))
