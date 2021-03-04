@@ -16,10 +16,9 @@ pub async fn session_test(identity: Identity) -> Result<String> {
     if let Some(username) = identity.identity() {
         info!(LOG, "You are {:?}", username);
         Ok(format!("Welcome {:?}", username))
-            
     } else {
         info!(LOG, "You are not logged in!");
-        Ok("Welcome unknown person!".to_string())        
+        Ok("Welcome unknown person!".to_string())
     }
 }
 

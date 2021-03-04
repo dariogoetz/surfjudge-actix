@@ -4,7 +4,7 @@ use crate::models::{heat::Heat, surfer::Surfer};
 use futures::future;
 
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, types::Json};
+use sqlx::{types::Json, FromRow};
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct WaveScore {
@@ -50,21 +50,24 @@ impl From<ResultCore> for Result {
     }
 }
 
-
 impl Result {
     async fn expand(mut self, db: &Pool) -> Self {
         // getting the heat leads to a lot of overhead
         // because the heat gets the category and the category gets the tournament
         //self.heat = Heat::find_by_id(&db, self.heat_id as u32, false).await.unwrap_or(None);
-        self.surfer = Surfer::find_by_id(&db, self.surfer_id as u32).await.unwrap_or(None);
+        self.surfer = Surfer::find_by_id(&db, self.surfer_id as u32)
+            .await
+            .unwrap_or(None);
         self
     }
 
-    async fn expand_vec(db: &Pool, v: impl std::iter::Iterator<Item=Self>, expand: bool) -> Vec<Self> {
+    async fn expand_vec(
+        db: &Pool,
+        v: impl std::iter::Iterator<Item = Self>,
+        expand: bool,
+    ) -> Vec<Self> {
         match expand {
-            true => {
-                future::join_all(v.map(|r|{ r.expand(&db) })).await
-            },
+            true => future::join_all(v.map(|r| r.expand(&db))).await,
             false => v.collect(),
         }
     }
@@ -73,30 +76,49 @@ impl Result {
         let res = sqlx::query_as::<_, ResultCore>(query)
             .fetch_all(db)
             .await?
-            .into_iter().map(|r| Self::from(r));
+            .into_iter()
+            .map(|r| Self::from(r));
         Ok(Self::expand_vec(&db, res, expand).await)
     }
 
-    async fn find_vec_bind(db: &Pool, query: &'static str, value: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
+    async fn find_vec_bind(
+        db: &Pool,
+        query: &'static str,
+        value: u32,
+        expand: bool,
+    ) -> anyhow::Result<Vec<Self>> {
         let res = sqlx::query_as::<_, ResultCore>(query)
             .bind(value)
             .fetch_all(db)
             .await?
-            .into_iter().map(|r| Self::from(r));
+            .into_iter()
+            .map(|r| Self::from(r));
         Ok(Self::expand_vec(&db, res, expand).await)
     }
 
-    
     pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
         Self::find_vec(&db, r#"SELECT * FROM results"#, expand).await
     }
 
-
-    pub async fn find_by_heat_id(db: &Pool, heat_id: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
-        Self::find_vec_bind(&db, r#"SELECT * FROM results WHERE heat_id = $1"#, heat_id, expand).await
+    pub async fn find_by_heat_id(
+        db: &Pool,
+        heat_id: u32,
+        expand: bool,
+    ) -> anyhow::Result<Vec<Self>> {
+        Self::find_vec_bind(
+            &db,
+            r#"SELECT * FROM results WHERE heat_id = $1"#,
+            heat_id,
+            expand,
+        )
+        .await
     }
 
-    pub async fn find_by_category_id(db: &Pool, category_id: u32, expand: bool) -> anyhow::Result<Vec<Self>> {
+    pub async fn find_by_category_id(
+        db: &Pool,
+        category_id: u32,
+        expand: bool,
+    ) -> anyhow::Result<Vec<Self>> {
         Self::find_vec_bind(
             &db,
             r#"
@@ -106,7 +128,8 @@ JOIN heats h
 ON h.id = r.heat_id
 WHERE h.category_id = $1"#,
             category_id,
-            expand
-        ).await
+            expand,
+        )
+        .await
     }
 }

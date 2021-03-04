@@ -1,4 +1,4 @@
-use crate::configuration::{CONFIG, UISettings};
+use crate::configuration::{UISettings, CONFIG};
 use actix_web::{web, Result};
 
 pub async fn get_ui_config() -> Result<web::Json<UISettings>> {
