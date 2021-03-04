@@ -10,11 +10,30 @@ use std::pin::Pin;
 
 pub type Sessions = DashMap<String, AuthenticatedUser>;
 
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticatedUser {
     pub username: String,
-    pub role: Role,
+    pub roles: Vec<Role>,
+}
+
+impl AuthenticatedUser{
+
+    fn has_role(&self, role: &Role) -> bool {
+        self.roles.iter().any(|r| r == role)
+    }
+
+    pub fn is_admin(&self) -> bool {
+        self.has_role(&Role::Admin)
+    }
+
+    pub fn is_judge(&self) -> bool {
+        self.has_role(&Role::Judge)
+    }
+    
+    pub fn is_commentator(&self) -> bool {
+        self.has_role(&Role::Commentator)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -23,13 +42,6 @@ pub enum Role {
     Admin,
     Judge,
     Commentator,
-    None,
-}
-
-impl Default for Role {
-    fn default() -> Self {
-        Role::None
-    }
 }
 
 impl FromRequest for AuthenticatedUser {
@@ -38,7 +50,6 @@ impl FromRequest for AuthenticatedUser {
     type Future = Pin<Box<dyn Future<Output = Result<AuthenticatedUser, Error>>>>;
 
     fn from_request(req: &HttpRequest, pl: &mut Payload) -> Self::Future {
-        let fut = Identity::from_request(req, pl);
         let sessions: Option<&web::Data<Sessions>> = req.app_data();
         if sessions.is_none() {
             warn!(LOG, "Sessions is empty!");
@@ -46,6 +57,7 @@ impl FromRequest for AuthenticatedUser {
         }
 
         let sessions = sessions.unwrap().clone();
+        let fut = Identity::from_request(req, pl);
         Box::pin(async move {
             let identity = fut.await?;
             if let Some(username) = identity.identity() {
@@ -59,5 +71,77 @@ impl FromRequest for AuthenticatedUser {
 
             Err(ErrorUnauthorized("unauthorized"))
         })
+    }
+}
+
+
+#[derive(Serialize, Debug, Default, Clone)]
+pub struct AuthenticatedAdmin(AuthenticatedUser);
+
+impl FromRequest for AuthenticatedAdmin {
+    type Config = ();
+    type Error = Error;
+    type Future = Pin<Box<dyn Future<Output = Result<AuthenticatedAdmin, Error>>>>;
+
+    fn from_request(req: &HttpRequest, pl: &mut Payload) -> Self::Future {
+        let fut = AuthenticatedUser::from_request(req, pl);
+        Box::pin(async move {
+            let user = fut.await?;
+            if user.is_admin() {
+                return Ok(AuthenticatedAdmin(user));
+            } else {
+                warn!(LOG, "Unauthorized: User {:?} is not an admin!", user.username)
+            }
+            Err(ErrorUnauthorized("unauthorized"))
+        })
+
+    }
+}
+
+
+#[derive(Serialize, Debug, Default, Clone)]
+pub struct AuthenticatedJudge(AuthenticatedUser); // TODO: get judge id and store here
+
+impl FromRequest for AuthenticatedJudge {
+    type Config = ();
+    type Error = Error;
+    type Future = Pin<Box<dyn Future<Output = Result<AuthenticatedJudge, Error>>>>;
+
+    fn from_request(req: &HttpRequest, pl: &mut Payload) -> Self::Future {
+        let fut = AuthenticatedUser::from_request(req, pl);
+        Box::pin(async move {
+            let user = fut.await?;
+            if user.is_judge() {
+                return Ok(AuthenticatedJudge(user));
+            } else {
+                warn!(LOG, "Unauthorized: User {:?} is not a judge!", user.username)
+            }
+            Err(ErrorUnauthorized("unauthorized"))
+        })
+
+    }
+}
+
+
+#[derive(Serialize, Debug, Default, Clone)]
+pub struct AuthenticatedCommentator(AuthenticatedUser);
+
+impl FromRequest for AuthenticatedCommentator {
+    type Config = ();
+    type Error = Error;
+    type Future = Pin<Box<dyn Future<Output = Result<AuthenticatedCommentator, Error>>>>;
+
+    fn from_request(req: &HttpRequest, pl: &mut Payload) -> Self::Future {
+        let fut = AuthenticatedUser::from_request(req, pl);
+        Box::pin(async move {
+            let user = fut.await?;
+            if user.is_commentator() {
+                return Ok(AuthenticatedCommentator(user));
+            } else {
+                warn!(LOG, "Unauthorized: User {:?} is not a commentator!", user.username)
+            }
+            Err(ErrorUnauthorized("unauthorized"))
+        })
+
     }
 }
