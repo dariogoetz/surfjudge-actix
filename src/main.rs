@@ -3,10 +3,13 @@ use sloggers::terminal::TerminalLoggerBuilder;
 use sloggers::Build;
 
 use anyhow::Result;
+use rand::Rng;
 
 use actix_web::{middleware::Logger, middleware::Compress, App, HttpServer};
 use actix_cors::Cors;
+use actix_identity::{CookieIdentityPolicy, IdentityService};
 
+mod auth;
 mod configuration;
 mod database;
 mod endpoints;
@@ -16,6 +19,7 @@ mod templates;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
+    use auth::Sessions;
     use configuration::CONFIG;
 
     let builder = TerminalLoggerBuilder::new();
@@ -27,13 +31,19 @@ async fn main() -> Result<()> {
     info!(logger, "Loading templates from {:?}", CONFIG.template_dir);
     let tmpl = templates::get_templates().await?;
 
+    let private_key = rand::thread_rng().gen::<[u8; 32]>();
+    let sessions = web::Data::new(Sessions::new());
     let server = HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .wrap(Cors::new()  // enable cors for frontend development with webpack dev server
                   .finish()
+            .app_data(sessions.clone())
             )
             .wrap(Compress::default())
+            .wrap(IdentityService::new(
+                CookieIdentityPolicy::new(&[0; 32]).name("surfjudge-actix").secure(false),
+            ))
             .configure(routes::routes)
             .data(pool.clone())
             .data(tmpl.clone())

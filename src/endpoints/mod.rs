@@ -10,3 +10,5 @@ pub mod lycra_color;
 pub mod heat_advancement;
 
 pub mod pages;
+
+pub mod auth;
