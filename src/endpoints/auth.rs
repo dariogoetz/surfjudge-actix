@@ -1,4 +1,4 @@
-use crate::auth::{AuthenticatedUser, AuthenticatedAdmin, AuthenticatedJudge, AuthenticatedCommentator, Role, Sessions};
+use crate::auth::{AuthenticatedUser, AuthorizedUser, Role, Sessions};
 use crate::logging::LOG;
 
 use actix_identity::Identity;
@@ -10,7 +10,7 @@ use slog::info;
 #[serde(rename_all = "camelCase")]
 pub struct Login {
     pub username: String,
-    pub password: String
+    pub password: String,
 }
 
 pub async fn session_test(identity: Identity) -> Result<String> {
@@ -23,7 +23,7 @@ pub async fn session_test(identity: Identity) -> Result<String> {
     }
 }
 
-pub async fn protected(user: AuthenticatedAdmin) -> Result<&'static str> {
+pub async fn protected(user: AuthorizedUser) -> Result<&'static str> {
     info!(LOG, "Accessing protected resource from {:?}", user);
     Ok("Welcome to protected land!")
 }
@@ -37,15 +37,15 @@ pub async fn login(
 
     let user = AuthenticatedUser {
         username: id.clone(),
-        roles: vec![Role::Admin],
+        roles: vec![Role::Commentator],
     };
     // let db_user = fetch_user(login).await // from db?
     // if security.verify_password(id, &db_user.password) {
     //     let user = AuthenticatedUser { id.clone(), &db_user.roles.clone() };
     // } else {
-    //     return Err(...unauthorized) 
+    //     return Err(...unauthorized)
     // }
-    
+
     identity.remember(id.clone());
 
     info!(LOG, "Login user: {:?}", user);

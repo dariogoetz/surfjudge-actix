@@ -17,6 +17,11 @@ pub struct UISettings {
     pub api_path: String,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Auth {
+    pub rules_file: String,
+}
+
 #[derive(Deserialize, Debug)]
 pub struct Settings {
     pub debug: String,
@@ -24,6 +29,7 @@ pub struct Settings {
     pub database: Database,
     pub ui_settings: UISettings,
     pub template_dir: String,
+    pub auth: Auth,
 }
 
 pub static CONFIG: Lazy<Settings> = Lazy::new(|| {

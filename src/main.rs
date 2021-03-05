@@ -1,6 +1,7 @@
 use anyhow::Result;
 use rand::Rng;
 use slog::info;
+use std::sync::Arc;
 
 use actix_cors::Cors;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
@@ -17,7 +18,7 @@ mod templates;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    use auth::Sessions;
+    use auth::{OsoState, Sessions};
     use configuration::CONFIG;
     use logging::LOG;
 
@@ -27,11 +28,15 @@ async fn main() -> Result<()> {
     info!(LOG, "Loading templates from {:?}", CONFIG.template_dir);
     let tmpl = templates::get_templates().await?;
 
+    info!(LOG, "Loading auth rules form {:?}", CONFIG.auth.rules_file);
+    let oso_state = web::Data::new(Arc::new(OsoState::new(&CONFIG.auth.rules_file)?));
+
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
     let sessions = web::Data::new(Sessions::new());
     let server = HttpServer::new(move || {
         App::new()
             .app_data(sessions.clone())
+            .app_data(oso_state.clone())
             .wrap(Compress::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&private_key)
