@@ -1,6 +1,7 @@
 pub mod config;
 
 pub mod heat;
+pub mod heat_state;
 pub mod category;
 pub mod tournament;
 pub mod result;
