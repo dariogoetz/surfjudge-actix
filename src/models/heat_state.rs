@@ -2,7 +2,7 @@ use crate::database::Pool;
 
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use sqlx::{Type, FromRow};
+use sqlx::{FromRow, Type};
 
 #[derive(Type, Debug, Serialize, Deserialize)]
 #[sqlx(rename_all = "lowercase")]
@@ -10,9 +10,8 @@ use sqlx::{Type, FromRow};
 pub enum HeatStateType {
     Active,
     Paused,
-    Inactive
+    Inactive,
 }
-
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct HeatState {
@@ -23,12 +22,15 @@ pub struct HeatState {
     pub remaining_time_s: Option<f64>,
     pub state: HeatStateType,
     pub duration_m: f64,
-    pub additional_data: Option<String>
+    pub additional_data: Option<String>,
 }
 
-
 impl HeatState {
-    async fn find_option_bind(db: &Pool, query: &'static str, value: u32) -> anyhow::Result<Option<Self>> {
+    async fn find_option_bind(
+        db: &Pool,
+        query: &'static str,
+        value: u32,
+    ) -> anyhow::Result<Option<Self>> {
         let res = sqlx::query_as::<_, HeatState>(query)
             .bind(value)
             .fetch_optional(db)
@@ -39,6 +41,11 @@ impl HeatState {
     }
 
     pub async fn find_by_heat_id(db: &Pool, heat_id: u32) -> anyhow::Result<Option<Self>> {
-        Self::find_option_bind(&db, r#"SELECT * FROM heat_state WHERE heat_id = $1"#, heat_id).await
+        Self::find_option_bind(
+            &db,
+            r#"SELECT * FROM heat_state WHERE heat_id = $1"#,
+            heat_id,
+        )
+        .await
     }
 }

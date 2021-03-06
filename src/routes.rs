@@ -1,7 +1,7 @@
 use crate::configuration::CONFIG;
 use crate::endpoints::{
-    category, config, heat, heat_advancement, lycra_color, pages, participation, result, surfer,
-    tournament,
+    category, config, heat, heat_advancement, heat_state, lycra_color, pages, participation,
+    result, surfer, tournament,
 };
 
 use actix_files as fs;
@@ -22,9 +22,10 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 "/heats/{id}/participations",
                 web::get().to(participation::get_by_heat_id),
             )
-
-            .route("/heat_state/{heat_id}", web::get().to(heat_state::get_by_heat_id))
-
+            .route(
+                "/heat_state/{heat_id}",
+                web::get().to(heat_state::get_by_heat_id),
+            )
             .route("/active_heats", web::get().to(heat::get_active_heats))
             .route(
                 "/active_heats/{tournament_id}",
