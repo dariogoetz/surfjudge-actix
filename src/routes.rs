@@ -1,6 +1,6 @@
 use crate::configuration::CONFIG;
 use crate::endpoints::{
-    auth, category, config, heat, heat_advancement, lycra_color, pages, participation, result,
+    heat_state, auth, category, config, heat, heat_advancement, lycra_color, pages, participation, result,
     surfer, tournament,
 };
 
@@ -21,6 +21,10 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
             .route(
                 "/heats/{id}/participations",
                 web::get().to(participation::get_by_heat_id),
+            )
+            .route(
+                "/heat_state/{heat_id}",
+                web::get().to(heat_state::get_by_heat_id),
             )
             .route("/active_heats", web::get().to(heat::get_active_heats))
             .route(
