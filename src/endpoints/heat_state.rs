@@ -31,17 +31,21 @@ pub async fn get_remaining_heat_time(
     web::Path(heat_id): web::Path<u32>,
     db: web::Data<Pool>,
 ) -> Result<Option<String>> {
-    let now = Utc::now().naive_utc();
     let result = HeatState::find_by_heat_id(db.get_ref(), heat_id)
         .await
         .map_err(|e| {
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
-    let result = result.map(|r| {
-        format!(
-            "{}",
-            ((r.end_datetime - now).num_milliseconds() as f64 / 1000.0).max(0.0)
-        )
+    let result = result.map(|heat_state| {
+        let remaining_time_s = match heat_state.state {
+            HeatStateType::Paused => heat_state.remaining_time_s.unwrap_or(0.0),
+            HeatStateType::Active => ((heat_state.end_datetime - Utc::now().naive_utc())
+                .num_milliseconds() as f64
+                / 1000.0)
+                .max(0.0),
+            _ => heat_state.duration_m as f64 * 60.0,
+        };
+        format!("{}", remaining_time_s)
     });
 
     Ok(result)
