@@ -7,3 +7,5 @@ pub mod participation;
 pub mod result;
 pub mod surfer;
 pub mod tournament;
+pub mod permission;
+pub mod user;

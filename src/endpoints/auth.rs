@@ -1,8 +1,10 @@
-use crate::auth::{AuthenticatedUser, AuthorizedUser, Permission, Sessions};
+use crate::auth::{AuthenticatedUser, AuthorizedUser, Sessions};
+use crate::database::Pool;
 use crate::logging::LOG;
+use crate::models::user::User;
 
 use actix_identity::Identity;
-use actix_web::{web, HttpResponse, Responder, Result};
+use actix_web::{error, web, HttpResponse, Responder, Result};
 use serde::{Deserialize, Serialize};
 use slog::info;
 
@@ -30,27 +32,45 @@ pub async fn protected(user: AuthorizedUser) -> Result<&'static str> {
 
 pub async fn login(
     login: web::Json<Login>,
+    db: web::Data<Pool>,
     sessions: web::Data<Sessions>,
     identity: Identity,
-) -> impl Responder {
+) -> Result<web::Json<Option<AuthenticatedUser>>> {
     let id = &login.username;
 
-    let user = AuthenticatedUser {
+    let user = User::find_by_username(db.get_ref(), id, true)
+        .await
+        .map_err(|e| {
+            error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+        })?;
+
+    if user.is_none() {
+        return Ok(web::Json(None));
+    }
+
+    // user with that username exists
+    let user = user.unwrap();
+    info!(LOG, "Found user in DB: {:?}", user);
+
+    // TODO: check password
+
+    let permissions = user
+        .permissions
+        .unwrap_or(Vec::new())
+        .iter()
+        .map(|p| p.permission.clone())
+        .collect();
+    let auth_user = AuthenticatedUser {
         username: id.clone(),
-        permissions: vec![Permission::Commentator],
+        permissions: permissions,
     };
-    // let db_user = fetch_user(login).await // from db?
-    // if security.verify_password(id, &db_user.password) {
-    //     let user = AuthenticatedUser { id.clone(), &db_user.permissions.clone() };
-    // } else {
-    //     return Err(...unauthorized)
-    // }
 
     identity.remember(id.clone());
 
-    info!(LOG, "Login user: {:?}", user);
-    sessions.insert(id.clone(), user.clone());
-    HttpResponse::Ok().json(user)
+    info!(LOG, "Login user: {:?}", auth_user);
+    sessions.insert(id.clone(), auth_user.clone());
+
+    Ok(web::Json(Some(auth_user)))
 }
 
 pub async fn logout(sessions: web::Data<Sessions>, identity: Identity) -> impl Responder {

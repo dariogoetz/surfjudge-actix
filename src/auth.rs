@@ -1,4 +1,5 @@
 use crate::logging::LOG;
+use crate::models::permission::PermissionType;
 
 use actix_identity::Identity;
 use actix_web::{dev::Payload, error::ErrorUnauthorized, web, Error, FromRequest, HttpRequest};
@@ -6,42 +7,35 @@ use anyhow::Result;
 use dashmap::DashMap;
 use futures::future::Future;
 use oso::{Oso, PolarClass};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use slog::{error, warn};
 use std::{pin::Pin, sync::Arc, sync::Mutex};
 
 pub type Sessions = DashMap<String, AuthenticatedUser>;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub enum Permission {
-    Admin,
-    Judge,
-    Commentator,
-}
 
 #[derive(Serialize, Debug, Default, Clone, PolarClass)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticatedUser {
     pub username: String,
-    pub permissions: Vec<Permission>,
+    pub permissions: Vec<PermissionType>,
 }
 
 impl AuthenticatedUser {
-    fn has_permission(&self, permission: &Permission) -> bool {
+    fn has_permission(&self, permission: &PermissionType) -> bool {
         self.permissions.iter().any(|r| r == permission)
     }
 
     pub fn is_admin(&self) -> bool {
-        self.has_permission(&Permission::Admin)
+        self.has_permission(&PermissionType::Admin)
     }
 
     pub fn is_judge(&self) -> bool {
-        self.has_permission(&Permission::Judge)
+        self.has_permission(&PermissionType::Judge)
     }
 
     pub fn is_commentator(&self) -> bool {
-        self.has_permission(&Permission::Commentator)
+        self.has_permission(&PermissionType::Commentator)
     }
 }
 
