@@ -23,11 +23,11 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 web::get().to(participation::get_by_heat_id),
             )
             .route(
-                "/heat_state/{heat_id}",
+                "/heats/{heat_id}/state",
                 web::get().to(heat_state::get_by_heat_id),
             )
             .route(
-                "/remaining_heat_time/{heat_id}",
+                "/heats/{heat_id}/remaining_time",
                 web::get().to(heat_state::get_remaining_heat_time),
             )
             .route("/active_heats", web::get().to(heat::get_active_heats))
