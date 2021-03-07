@@ -14,7 +14,7 @@ pub type Sessions = DashMap<String, AuthenticatedUser>;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub enum Role {
+pub enum Permission {
     Admin,
     Judge,
     Commentator,
@@ -24,24 +24,24 @@ pub enum Role {
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticatedUser {
     pub username: String,
-    pub roles: Vec<Role>,
+    pub permissions: Vec<Permission>,
 }
 
 impl AuthenticatedUser {
-    fn has_role(&self, role: &Role) -> bool {
-        self.roles.iter().any(|r| r == role)
+    fn has_permission(&self, permission: &Permission) -> bool {
+        self.permissions.iter().any(|r| r == permission)
     }
 
     pub fn is_admin(&self) -> bool {
-        self.has_role(&Role::Admin)
+        self.has_permission(&Permission::Admin)
     }
 
     pub fn is_judge(&self) -> bool {
-        self.has_role(&Role::Judge)
+        self.has_permission(&Permission::Judge)
     }
 
     pub fn is_commentator(&self) -> bool {
-        self.has_role(&Role::Commentator)
+        self.has_permission(&Permission::Commentator)
     }
 }
 

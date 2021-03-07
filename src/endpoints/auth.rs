@@ -1,4 +1,4 @@
-use crate::auth::{AuthenticatedUser, AuthorizedUser, Role, Sessions};
+use crate::auth::{AuthenticatedUser, AuthorizedUser, Permission, Sessions};
 use crate::logging::LOG;
 
 use actix_identity::Identity;
@@ -37,11 +37,11 @@ pub async fn login(
 
     let user = AuthenticatedUser {
         username: id.clone(),
-        roles: vec![Role::Commentator],
+        permissions: vec![Permission::Commentator],
     };
     // let db_user = fetch_user(login).await // from db?
     // if security.verify_password(id, &db_user.password) {
-    //     let user = AuthenticatedUser { id.clone(), &db_user.roles.clone() };
+    //     let user = AuthenticatedUser { id.clone(), &db_user.permissions.clone() };
     // } else {
     //     return Err(...unauthorized)
     // }
