@@ -170,7 +170,7 @@ SELECT h.*
 FROM heats h
 INNER JOIN heat_state s
 ON s.heat_id = h.id
-WHERE s.state = 'active' AND h.category_id = $1"#,
+WHERE s.state in ('active', 'paused') AND h.category_id = $1"#,
             category_id,
             expand,
         )
@@ -191,7 +191,7 @@ INNER JOIN categories c
 ON h.category_id = c.id
   INNER JOIN heat_state s
   ON s.heat_id = h.id
-  WHERE s.state = 'active' AND c.tournament_id = $1"#,
+  WHERE s.state in ('active', 'paused') AND c.tournament_id = $1"#,
             tournament_id,
             expand,
         )
@@ -206,7 +206,7 @@ SELECT h.*
 FROM heats h
 INNER JOIN heat_state s
 ON s.heat_id = h.id
-WHERE s.state = 'active'
+WHERE s.state in ('active', 'paused')
 "#,
             expand,
         )
