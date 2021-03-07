@@ -42,7 +42,7 @@ impl From<UserCore> for User {
 
 impl User {
     async fn expand_permissions(mut self, db: &Pool) -> Self {
-        self.permissions = Permission::find_by_user_id(&db, self.id as u32)
+        self.permissions = Permission::find_by_user_id(&db, self.id)
             .await
             .ok();
         self
