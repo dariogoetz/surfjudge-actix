@@ -26,9 +26,10 @@ RUN chown -R $APP_USER:$APP_USER ${APP}
 USER $APP_USER
 WORKDIR ${APP}
 
-COPY --from=builder /surfjudge-actix/target/release/surfjudge-actix ${APP}/surfjudge-actix
 ADD static ${APP}/static
 ADD templates ${APP}/templates
 ADD config ${APP}/config
+
+COPY --from=builder /surfjudge-actix/target/release/surfjudge-actix ${APP}/surfjudge-actix
 
 CMD ["./surfjudge-actix"]
