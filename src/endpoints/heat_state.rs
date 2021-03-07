@@ -39,7 +39,7 @@ pub async fn get_remaining_heat_time(
     let result = match result {
         None => None,
         Some(heat_state) => match heat_state.state {
-            HeatStateType::Paused => heat_state.remaining_time_s,
+            HeatStateType::Paused => heat_state.remaining_time_s.map(|t| t.max(0.0)),
             HeatStateType::Active => {
                 let now = Utc::now().naive_utc();
                 let diff = (heat_state.end_datetime - now).num_milliseconds() as f64 / 1000.0;
