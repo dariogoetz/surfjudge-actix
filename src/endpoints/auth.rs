@@ -50,7 +50,6 @@ pub async fn login(
 
     // user with that username exists
     let user = user.unwrap();
-    info!(LOG, "Found user in DB: {:?}", user);
 
     // TODO: check password
 
