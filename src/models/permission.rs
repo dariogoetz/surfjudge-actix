@@ -1,9 +1,7 @@
 use crate::database::Pool;
 
 use serde::{Deserialize, Serialize};
-use sqlx::{Type, FromRow};
-
-
+use sqlx::{FromRow, Type};
 
 #[derive(Type, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum PermissionType {
@@ -17,7 +15,6 @@ pub enum PermissionType {
     #[sqlx(rename = "ac_commentator")]
     Commentator,
 }
-
 
 // this struct will be used to represent database record
 #[derive(Debug, Serialize, Deserialize, FromRow)]

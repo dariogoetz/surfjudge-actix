@@ -1,7 +1,7 @@
 use crate::configuration::CONFIG;
 use crate::endpoints::{
-    heat_state, auth, category, config, heat, heat_advancement, lycra_color, pages, participation, result,
-    surfer, tournament,
+    auth, category, config, heat, heat_advancement, heat_state, lycra_color, pages, participation,
+    result, surfer, tournament,
 };
 
 use actix_files as fs;

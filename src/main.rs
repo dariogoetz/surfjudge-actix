@@ -7,7 +7,8 @@ use actix_cors::Cors;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{middleware::Compress, middleware::Logger, web, App, HttpServer};
 
-mod auth;
+mod authentication;
+mod authorization;
 mod configuration;
 mod database;
 mod endpoints;
@@ -18,7 +19,8 @@ mod templates;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    use auth::{OsoState, Sessions};
+    use authentication::Sessions;
+    use authorization::OsoState;
     use configuration::CONFIG;
     use logging::LOG;
 
