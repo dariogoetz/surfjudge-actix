@@ -7,22 +7,28 @@ use std::thread;
 use zmq::{Context, PUB};
 
 use serde::{Deserialize, Serialize};
-use serde_json;
+use serde_json::Value;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ZMQMessage {
-    pub channel: String,
-    pub message: String,
+#[serde(rename_all = "snake_case")]
+pub enum Channel {
+    ActiveHeats,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct NotifierMessage {
+    channel: Channel,
+    message: String,
 }
 
 #[derive(Clone)]
 pub struct Notifier {
-    sender: Sender<ZMQMessage>,
+    sender: Sender<NotifierMessage>,
 }
 
 impl Notifier {
     pub async fn new(addr: &str) -> Result<Notifier> {
-        let (server_sender, server_receiver) = mpsc::channel::<ZMQMessage>();
+        let (server_sender, server_receiver) = mpsc::channel::<NotifierMessage>();
 
         let context = Context::new();
         let publisher = context.socket(PUB).unwrap();
@@ -30,8 +36,6 @@ impl Notifier {
 
         thread::spawn(move || {
             while let Ok(msg) = server_receiver.recv() {
-                info!(LOG, "Sending ZMQ message to websocket server");
-
                 match publisher.send(&serde_json::to_string(&msg).unwrap(), 0) {
                     Err(e) => warn!(LOG, "Could not send zmq message: {:?}", e),
                     _ => (),
@@ -44,7 +48,11 @@ impl Notifier {
         })
     }
 
-    pub async fn send(&self, msg: ZMQMessage) -> Result<()> {
+    pub async fn send_channel(&self, channel: Channel, message: Value) -> Result<()> {
+        let msg = NotifierMessage {
+            channel: channel,
+            message: message.to_string(),
+        };
         Ok(self.sender.send(msg)?)
     }
 }

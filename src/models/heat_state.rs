@@ -1,6 +1,6 @@
 use crate::database::Pool;
 
-use chrono::NaiveDateTime;
+use chrono::{Duration, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Type};
 
@@ -47,5 +47,40 @@ impl HeatState {
             heat_id,
         )
         .await
+    }
+
+    pub async fn set_heat_started(db: &Pool, heat_id: u32, duration_m: f64) -> anyhow::Result<()> {
+        let start = Utc::now().naive_utc();
+        let end = start + Duration::seconds((duration_m * 60.0) as i64);
+
+        sqlx::query(
+            r#"
+INSERT INTO heat_state (heat_id, state, start_datetime, end_datetime, duration_m)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (heat_id)
+DO NOTHING;
+        "#,
+        )
+        .bind(heat_id)
+        .bind(HeatStateType::Active)
+        .bind(start)
+        .bind(end)
+        .bind(duration_m)
+        .execute(db)
+        .await?;
+        Ok(())
+    }
+
+    pub async fn set_heat_stopped(db: &Pool, heat_id: u32) -> anyhow::Result<()> {
+        sqlx::query(
+            r#"
+DELETE FROM heat_state
+WHERE heat_id = $1;
+        "#,
+        )
+        .bind(heat_id)
+        .execute(db)
+        .await?;
+        Ok(())
     }
 }
