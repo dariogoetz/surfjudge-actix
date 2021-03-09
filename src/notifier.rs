@@ -1,7 +1,7 @@
 use crate::logging::LOG;
 
 use anyhow::Result;
-use slog::{info, warn};
+use slog::warn;
 use std::sync::mpsc::{self, Sender};
 use std::thread;
 use zmq::{Context, PUB};

@@ -64,9 +64,10 @@ pub async fn start_heat(
     user: AuthorizedUser,
 ) -> Result<&'static str> {
     info!(LOG, "Start heat {} by {:?}", heat_id, user);
-    HeatState::set_heat_started(&db, heat_id, 10.0)
+    HeatState::set_heat_started(&db, heat_id)
         .await
         .map_err(|e| {
+            // TODO: not found error in case it was not found
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
 
@@ -93,6 +94,7 @@ pub async fn stop_heat(
     HeatState::set_heat_stopped(&db, heat_id)
         .await
         .map_err(|e| {
+            // TODO: not found error in case it was not found
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
 

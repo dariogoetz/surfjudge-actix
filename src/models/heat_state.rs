@@ -1,8 +1,16 @@
 use crate::database::Pool;
+use crate::models::heat::Heat;
 
 use chrono::{Duration, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Type};
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum HeatStateError {
+    #[error("Heat {0} not found")]
+    NotFound(u32),
+}
 
 #[derive(Type, Debug, Serialize, Deserialize)]
 #[sqlx(rename_all = "lowercase")]
@@ -49,9 +57,11 @@ impl HeatState {
         .await
     }
 
-    pub async fn set_heat_started(db: &Pool, heat_id: u32, duration_m: f64) -> anyhow::Result<()> {
+    pub async fn set_heat_started(db: &Pool, heat_id: u32) -> anyhow::Result<()> {
+        let heat = Heat::find_by_id(db, heat_id, false).await?.ok_or(HeatStateError::NotFound(heat_id))?;
+
         let start = Utc::now().naive_utc();
-        let end = start + Duration::seconds((duration_m * 60.0) as i64);
+        let end = start + Duration::seconds((heat.duration * 60.0) as i64);
 
         sqlx::query(
             r#"
@@ -65,7 +75,7 @@ DO NOTHING;
         .bind(HeatStateType::Active)
         .bind(start)
         .bind(end)
-        .bind(duration_m)
+        .bind(heat.duration)
         .execute(db)
         .await?;
         Ok(())
