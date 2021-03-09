@@ -14,9 +14,9 @@ mod database;
 mod endpoints;
 mod logging;
 mod models;
+mod notifier;
 mod routes;
 mod templates;
-mod notifier;
 
 #[actix_web::main]
 async fn main() -> Result<()> {

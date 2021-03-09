@@ -1,8 +1,11 @@
-use crate::{authentication::{authenticate_user, AuthenticatedUser, Sessions}, notifier::ZMQMessage};
 use crate::authorization::AuthorizedUser;
 use crate::database::Pool;
 use crate::logging::LOG;
 use crate::notifier::Notifier;
+use crate::{
+    authentication::{authenticate_user, AuthenticatedUser, Sessions},
+    notifier::ZMQMessage,
+};
 
 use actix_identity::Identity;
 use actix_web::{web, HttpResponse, Responder, Result};
