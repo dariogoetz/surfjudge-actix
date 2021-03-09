@@ -20,8 +20,14 @@ pub struct Login {
 }
 
 pub async fn session_test(identity: Identity, notifier: web::Data<Notifier>) -> Result<String> {
-    notifier.send(ZMQMessage {channel: "active_heats".to_string(), message: "hallo".to_string()}).unwrap();
-    
+    notifier
+        .send(ZMQMessage {
+            channel: "active_heats".to_string(),
+            message: "hallo".to_string(),
+        })
+        .await
+        .unwrap();
+
     if let Some(username) = identity.identity() {
         info!(LOG, "You are {:?}", username);
         Ok(format!("Welcome {:?}", username))

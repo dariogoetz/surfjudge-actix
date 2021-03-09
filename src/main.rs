@@ -35,8 +35,7 @@ async fn main() -> Result<()> {
     let oso_state = web::Data::new(Arc::new(OsoState::new(&CONFIG.auth.rules_file)?));
 
     info!(LOG, "Setting up zmq publisher on port {:?}", 6545);
-    let notifier = notifier::Notifier::new("tcp://localhost:6545");
-
+    let notifier = notifier::Notifier::new("tcp://localhost:6545").await?;
 
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
     let sessions = web::Data::new(Sessions::new());
