@@ -1,16 +1,11 @@
 use crate::database::Pool;
-use crate::models::heat::Heat;
 
-use chrono::{NaiveDateTime, Utc};
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Type};
-use thiserror::Error;
+use sqlx::{Done, FromRow, Type};
 
-#[derive(Error, Debug)]
-pub enum HeatStateError {
-    #[error("Heat {0} not found")]
-    NotFound(u32),
-}
+use crate::logging::LOG;
+use slog::info;
 
 #[derive(Type, Debug, Serialize, Deserialize)]
 #[sqlx(rename_all = "lowercase")]
@@ -57,53 +52,89 @@ impl HeatState {
         .await
     }
 
-    pub async fn set_heat_started(db: &Pool, heat_id: u32) -> anyhow::Result<()> {
-        let heat = Heat::find_by_id(db, heat_id, false).await?.ok_or(HeatStateError::NotFound(heat_id))?;
-
-        sqlx::query(
+    pub async fn set_heat_started(db: &Pool, heat_id: u32) -> anyhow::Result<bool> {
+        let res = sqlx::query(
             r#"
 INSERT INTO heat_state (heat_id, state, start_datetime, end_datetime, duration_m)
-VALUES ($1, $2, NOW(), NOW() + $3 * interval '60 seconds', $3)
+SELECT $1, $2, NOW(), NOW() + heats.duration * interval '60 seconds', heats.duration
+FROM heats
+WHERE heats.id = $1
 ON CONFLICT (heat_id)
-DO NOTHING;
+DO NOTHING
+RETURNING heat_id;
         "#,
         )
-            .bind(heat_id)
-            .bind(HeatStateType::Active)
-            .bind(heat.duration)
-            .execute(db)
-            .await?;
-        Ok(())
+        .bind(heat_id)
+        .bind(HeatStateType::Active)
+        .execute(db)
+        .await?;
+        Ok(res.rows_affected() > 0)
     }
 
-    pub async fn set_heat_stopped(db: &Pool, heat_id: u32) -> anyhow::Result<()> {
-        sqlx::query(
+    pub async fn set_heat_stopped(db: &Pool, heat_id: u32) -> anyhow::Result<bool> {
+        let res = sqlx::query(
             r#"
 DELETE FROM heat_state
-WHERE heat_id = $1;
+WHERE heat_id = $1
+RETURNING heat_id;
         "#,
         )
-            .bind(heat_id)
-            .execute(db)
-            .await?;
-        Ok(())
+        .bind(heat_id)
+        .execute(db)
+        .await?;
+        Ok(res.rows_affected() > 0)
     }
 
-    pub async fn set_heat_paused(db: &Pool, heat_id: u32) -> anyhow::Result<()> {
-        sqlx::query(
+    pub async fn set_heat_paused(db: &Pool, heat_id: u32) -> anyhow::Result<bool> {
+        let res = sqlx::query(
             r#"
 UPDATE heat_state
 SET
   pause_datetime = NOW(),
-  remaining_time_s = GREATEST(0, EXTRACT(EPOCH FROM (end_datetime - NOW())));,
-  state = $1
-WHERE heat_id = $2;
+  remaining_time_s = GREATEST(0, EXTRACT(EPOCH FROM (end_datetime - NOW()))),
+  state = $2
+WHERE heat_id = $1
+RETURNING heat_id;
         "#,
         )
-            .bind(heat_id)
-            .bind(HeatStateType::Paused)
-            .execute(db)
-            .await?;
-        Ok(())
+        .bind(heat_id)
+        .bind(HeatStateType::Paused)
+        .execute(db)
+        .await?;
+        Ok(res.rows_affected() > 0)
+    }
+
+    pub async fn set_heat_unpaused(db: &Pool, heat_id: u32) -> anyhow::Result<bool> {
+        let res = sqlx::query(
+            r#"
+UPDATE heat_state
+SET
+  pause_datetime = NULL,
+  remaining_time_s = NULL,
+  end_datetime = NOW() + remaining_time_r * interval '1 second',
+  state = $2
+WHERE heat_id = $1
+RETURNING heat_id;
+        "#,
+        )
+        .bind(heat_id)
+        .bind(HeatStateType::Active)
+        .execute(db)
+        .await?;
+        Ok(res.rows_affected() > 0)
+    }
+
+    pub async fn toggle_heat_pause(db: &Pool, heat_id: u32) -> anyhow::Result<bool> {
+        let heat_state = Self::find_by_heat_id(db, heat_id).await?;
+        if heat_state.is_none() {
+            return Ok(false);
+        }
+        let heat_state = heat_state.unwrap();
+
+        match heat_state.state {
+            HeatStateType::Active => Self::set_heat_paused(db, heat_id).await,
+            HeatStateType::Paused => Self::set_heat_unpaused(db, heat_id).await,
+            _ => Ok(false),
+        }
     }
 }

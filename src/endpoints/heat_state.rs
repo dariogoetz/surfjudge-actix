@@ -63,7 +63,6 @@ pub async fn start_heat(
     notifier: web::Data<Notifier>,
     user: AuthorizedUser,
 ) -> Result<&'static str> {
-    info!(LOG, "Start heat {} by {:?}", heat_id, user);
     HeatState::set_heat_started(&db, heat_id)
         .await
         .map_err(|e| {
@@ -71,6 +70,7 @@ pub async fn start_heat(
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
 
+    info!(LOG, "Start heat {} by {:?}", heat_id, user);
     notifier
         .send_channel(
             Channel::ActiveHeats,
@@ -90,14 +90,13 @@ pub async fn stop_heat(
     notifier: web::Data<Notifier>,
     user: AuthorizedUser,
 ) -> Result<&'static str> {
-    info!(LOG, "Stop heat {} by {:?}", heat_id, user);
     HeatState::set_heat_stopped(&db, heat_id)
         .await
         .map_err(|e| {
-            // TODO: not found error in case it was not found
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
 
+    info!(LOG, "Stop heat {} by {:?}", heat_id, user);
     notifier
         .send_channel(
             Channel::ActiveHeats,
@@ -109,4 +108,30 @@ pub async fn stop_heat(
         .await
         .unwrap();
     Ok("Stopped heat!")
+}
+
+pub async fn toggle_heat_pause(
+    web::Path(heat_id): web::Path<u32>,
+    db: web::Data<Pool>,
+    notifier: web::Data<Notifier>,
+    user: AuthorizedUser,
+) -> Result<&'static str> {
+    HeatState::toggle_heat_pause(&db, heat_id)
+        .await
+        .map_err(|e| {
+            error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+        })?;
+
+    info!(LOG, "Toggle heat pause {} by {:?}", heat_id, user);
+    notifier
+        .send_channel(
+            Channel::ActiveHeats,
+            json!({
+                "heat_id": heat_id,
+                "msg": "toggle_heat_pause"
+            }),
+        )
+        .await
+        .unwrap();
+    Ok("Toggled heat pause!")
 }
