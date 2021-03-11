@@ -4,9 +4,6 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use sqlx::{Done, FromRow, Type};
 
-use crate::logging::LOG;
-use slog::info;
-
 #[derive(Type, Debug, Serialize, Deserialize)]
 #[sqlx(rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
@@ -152,12 +149,7 @@ RETURNING heat_id;
         )
         .bind(heat_id)
         .execute(db)
-            .await;
-        if let Err(e) = res {
-            info!(LOG, "Error: {:?}", e);
-            return Err(e)?;
-        }
-        let res = res.unwrap();
+        .await?;
         Ok(res.rows_affected() > 0)
     }
 }
