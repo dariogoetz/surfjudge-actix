@@ -1,7 +1,7 @@
 use crate::database::Pool;
 use crate::models::heat::Heat;
 
-use chrono::{Duration, NaiveDateTime, Utc};
+use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Type};
 use thiserror::Error;
@@ -60,24 +60,19 @@ impl HeatState {
     pub async fn set_heat_started(db: &Pool, heat_id: u32) -> anyhow::Result<()> {
         let heat = Heat::find_by_id(db, heat_id, false).await?.ok_or(HeatStateError::NotFound(heat_id))?;
 
-        let start = Utc::now().naive_utc();
-        let end = start + Duration::seconds((heat.duration * 60.0) as i64);
-
         sqlx::query(
             r#"
 INSERT INTO heat_state (heat_id, state, start_datetime, end_datetime, duration_m)
-VALUES ($1, $2, $3, $4, $5)
+VALUES ($1, $2, NOW(), NOW() + $3 * interval '60 seconds', $3)
 ON CONFLICT (heat_id)
 DO NOTHING;
         "#,
         )
-        .bind(heat_id)
-        .bind(HeatStateType::Active)
-        .bind(start)
-        .bind(end)
-        .bind(heat.duration)
-        .execute(db)
-        .await?;
+            .bind(heat_id)
+            .bind(HeatStateType::Active)
+            .bind(heat.duration)
+            .execute(db)
+            .await?;
         Ok(())
     }
 
@@ -88,9 +83,27 @@ DELETE FROM heat_state
 WHERE heat_id = $1;
         "#,
         )
-        .bind(heat_id)
-        .execute(db)
-        .await?;
+            .bind(heat_id)
+            .execute(db)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn set_heat_paused(db: &Pool, heat_id: u32) -> anyhow::Result<()> {
+        sqlx::query(
+            r#"
+UPDATE heat_state
+SET
+  pause_datetime = NOW(),
+  remaining_time_s = GREATEST(0, EXTRACT(EPOCH FROM (end_datetime - NOW())));,
+  state = $1
+WHERE heat_id = $2;
+        "#,
+        )
+            .bind(heat_id)
+            .bind(HeatStateType::Paused)
+            .execute(db)
+            .await?;
         Ok(())
     }
 }
