@@ -111,7 +111,7 @@ UPDATE heat_state
 SET
   pause_datetime = NULL,
   remaining_time_s = NULL,
-  end_datetime = NOW() + remaining_time_r * interval '1 second',
+  end_datetime = NOW() + remaining_time_s * interval '1 second',
   state = $2
 WHERE heat_id = $1
 RETURNING heat_id;
