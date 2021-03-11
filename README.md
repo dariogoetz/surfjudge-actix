@@ -5,7 +5,7 @@
 3. Run `sudo docker-compose up -d` in top directory
 4. Fill database with test data `cat pgdumpfile | sudo docker exec -i surfjudge-actix_postgres_1 psql -U postgres`
 5. Install rust `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-7. Build the project and run `cargo run`
+6. Build the project and run `cargo run`
 
 # Installation of dev system for generating statically linked executable
 1. Perform installation of dev system
