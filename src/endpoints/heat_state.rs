@@ -135,3 +135,29 @@ pub async fn toggle_heat_pause(
         .unwrap();
     Ok("Toggled heat pause!")
 }
+
+pub async fn reset_heat_time(
+    web::Path(heat_id): web::Path<u32>,
+    db: web::Data<Pool>,
+    notifier: web::Data<Notifier>,
+    user: AuthorizedUser,
+) -> Result<&'static str> {
+    HeatState::reset_heat_time(&db, heat_id)
+        .await
+        .map_err(|e| {
+            error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+        })?;
+
+    info!(LOG, "Reset heat time for {} by {:?}", heat_id, user);
+    notifier
+        .send_channel(
+            Channel::ActiveHeats,
+            json!({
+                "heat_id": heat_id,
+                "msg": "reset_heat_time"
+            }),
+        )
+        .await
+        .unwrap();
+    Ok("Reset heat time!")
+}

@@ -42,6 +42,10 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 "/heats/{heat_id}/toggle_pause",
                 web::post().to(heat_state::toggle_heat_pause),
             )
+            .route(
+                "/heats/{heat_id}/reset_heat_time",
+                web::post().to(heat_state::reset_heat_time),
+            )
             .route("/active_heats", web::get().to(heat::get_active_heats))
             .route(
                 "/active_heats/{tournament_id}",

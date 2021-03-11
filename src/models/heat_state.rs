@@ -137,4 +137,27 @@ RETURNING heat_id;
             _ => Ok(false),
         }
     }
+
+    pub async fn reset_heat_time(db: &Pool, heat_id: u32) -> anyhow::Result<bool> {
+        let res = sqlx::query(
+            r#"
+UPDATE heat_state hs
+SET
+  end_datetime = NOW() + h.duration * interval '60 seconds',
+  remaining_time_s = 60 * h.duration
+FROM heats h
+WHERE hs.heat_id = $1 AND h.id = $1
+RETURNING heat_id;
+        "#,
+        )
+        .bind(heat_id)
+        .execute(db)
+            .await;
+        if let Err(e) = res {
+            info!(LOG, "Error: {:?}", e);
+            return Err(e)?;
+        }
+        let res = res.unwrap();
+        Ok(res.rows_affected() > 0)
+    }
 }
