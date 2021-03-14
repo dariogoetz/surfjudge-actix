@@ -31,10 +31,6 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 web::get().to(heat_state::get_remaining_heat_time),
             )
             .route("/active_heats", web::get().to(heat::get_active_heats))
-            .route(
-                "/active_heats/{tournament_id}",
-                web::get().to(heat::get_active_heats_by_tournament_id),
-            )
             .route("/categories", web::get().to(category::get_all))
             .route("/categories/{id}", web::get().to(category::get_by_id))
             .route(
