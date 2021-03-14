@@ -30,6 +30,22 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 "/heats/{heat_id}/remaining_time",
                 web::get().to(heat_state::get_remaining_heat_time),
             )
+            .route(
+                "/heats/{heat_id}/start",
+                web::post().to(heat_state::start_heat),
+            )
+            .route(
+                "/heats/{heat_id}/stop",
+                web::post().to(heat_state::stop_heat),
+            )
+            .route(
+                "/heats/{heat_id}/toggle_pause",
+                web::post().to(heat_state::toggle_heat_pause),
+            )
+            .route(
+                "/heats/{heat_id}/reset_heat_time",
+                web::post().to(heat_state::reset_heat_time),
+            )
             .route("/active_heats", web::get().to(heat::get_active_heats))
             .route("/categories", web::get().to(category::get_all))
             .route("/categories/{id}", web::get().to(category::get_by_id))

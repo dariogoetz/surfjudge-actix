@@ -1,8 +1,8 @@
-use crate::{authentication::{authenticate_user, AuthenticatedUser, Sessions}, notifier::ZMQMessage};
+use crate::authentication::{authenticate_user, AuthenticatedUser, Sessions};
 use crate::authorization::AuthorizedUser;
 use crate::database::Pool;
 use crate::logging::LOG;
-use crate::notifier::Notifier;
+use crate::notifier::{Channel, Notifier};
 
 use actix_identity::Identity;
 use actix_web::{web, HttpResponse, Responder, Result};
@@ -17,8 +17,11 @@ pub struct Login {
 }
 
 pub async fn session_test(identity: Identity, notifier: web::Data<Notifier>) -> Result<String> {
-    notifier.send(ZMQMessage {channel: "active_heats".to_string(), message: "hallo".to_string()}).unwrap();
-    
+    notifier
+        .send_channel(Channel::ActiveHeats, serde_json::json!("hallo"))
+        .await
+        .unwrap();
+
     if let Some(username) = identity.identity() {
         info!(LOG, "You are {:?}", username);
         Ok(format!("Welcome {:?}", username))

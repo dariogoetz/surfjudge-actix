@@ -26,6 +26,7 @@ pub struct Auth {
 pub struct Settings {
     pub debug: String,
     pub server_address: String,
+    pub zmq_address: String,
     pub database: Database,
     pub ui_settings: UISettings,
     pub template_dir: String,

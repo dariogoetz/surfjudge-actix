@@ -1,5 +1,6 @@
 debug = false
 server_address = "127.0.0.1:8081"
+zmq_address = "127.0.0.1:6545"
 template_dir = "templates"
 
 [ui_settings]

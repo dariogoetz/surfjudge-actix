@@ -14,9 +14,9 @@ mod database;
 mod endpoints;
 mod logging;
 mod models;
+mod notifier;
 mod routes;
 mod templates;
-mod notifier;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -34,9 +34,11 @@ async fn main() -> Result<()> {
     info!(LOG, "Loading auth rules form {:?}", CONFIG.auth.rules_file);
     let oso_state = web::Data::new(Arc::new(OsoState::new(&CONFIG.auth.rules_file)?));
 
-    info!(LOG, "Setting up zmq publisher on port {:?}", 6545);
-    let notifier = notifier::Notifier::new("tcp://localhost:6545");
-
+    info!(
+        LOG,
+        "Connecting ZMQ publisher to port {:?}", CONFIG.zmq_address
+    );
+    let notifier = notifier::Notifier::new(&format!("tcp://{}", CONFIG.zmq_address)).await?;
 
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
     let sessions = web::Data::new(Sessions::new());

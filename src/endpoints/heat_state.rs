@@ -1,9 +1,14 @@
+use crate::authorization::AuthorizedUser;
 use crate::database::Pool;
+use crate::logging::LOG;
 use crate::models::heat_state::{HeatState, HeatStateType};
+use crate::notifier::{Channel, Notifier};
 
 use actix_web::{error, web, Result};
 use chrono::Utc;
 use serde::Serialize;
+use serde_json::json;
+use slog::info;
 
 #[derive(Debug, Serialize)]
 pub struct ResultHeatState {
@@ -50,4 +55,109 @@ pub async fn get_remaining_heat_time(
     };
 
     Ok(web::Json(result))
+}
+
+pub async fn start_heat(
+    web::Path(heat_id): web::Path<u32>,
+    db: web::Data<Pool>,
+    notifier: web::Data<Notifier>,
+    user: AuthorizedUser,
+) -> Result<&'static str> {
+    HeatState::set_heat_started(&db, heat_id)
+        .await
+        .map_err(|e| {
+            // TODO: not found error in case it was not found
+            error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+        })?;
+
+    info!(LOG, "Start heat {} by {:?}", heat_id, user);
+    notifier
+        .send_channel(
+            Channel::ActiveHeats,
+            json!({
+                "heat_id": heat_id,
+                "msg": "start_heat"
+            }),
+        )
+        .await
+        .unwrap();
+    Ok("Started heat!")
+}
+
+pub async fn stop_heat(
+    web::Path(heat_id): web::Path<u32>,
+    db: web::Data<Pool>,
+    notifier: web::Data<Notifier>,
+    user: AuthorizedUser,
+) -> Result<&'static str> {
+    HeatState::set_heat_stopped(&db, heat_id)
+        .await
+        .map_err(|e| {
+            error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+        })?;
+
+    info!(LOG, "Stop heat {} by {:?}", heat_id, user);
+    notifier
+        .send_channel(
+            Channel::ActiveHeats,
+            json!({
+                "heat_id": heat_id,
+                "msg": "stop_heat"
+            }),
+        )
+        .await
+        .unwrap();
+    Ok("Stopped heat!")
+}
+
+pub async fn toggle_heat_pause(
+    web::Path(heat_id): web::Path<u32>,
+    db: web::Data<Pool>,
+    notifier: web::Data<Notifier>,
+    user: AuthorizedUser,
+) -> Result<&'static str> {
+    HeatState::toggle_heat_pause(&db, heat_id)
+        .await
+        .map_err(|e| {
+            error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+        })?;
+
+    info!(LOG, "Toggle pause for heat {} by {:?}", heat_id, user);
+    notifier
+        .send_channel(
+            Channel::ActiveHeats,
+            json!({
+                "heat_id": heat_id,
+                "msg": "toggle_heat_pause"
+            }),
+        )
+        .await
+        .unwrap();
+    Ok("Toggled heat pause!")
+}
+
+pub async fn reset_heat_time(
+    web::Path(heat_id): web::Path<u32>,
+    db: web::Data<Pool>,
+    notifier: web::Data<Notifier>,
+    user: AuthorizedUser,
+) -> Result<&'static str> {
+    HeatState::reset_heat_time(&db, heat_id)
+        .await
+        .map_err(|e| {
+            error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+        })?;
+
+    info!(LOG, "Reset heat time for heat {} by {:?}", heat_id, user);
+    notifier
+        .send_channel(
+            Channel::ActiveHeats,
+            json!({
+                "heat_id": heat_id,
+                "msg": "reset_heat_time"
+            }),
+        )
+        .await
+        .unwrap();
+    Ok("Reset heat time!")
 }
