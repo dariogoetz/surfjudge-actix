@@ -66,6 +66,8 @@ impl FromRequest for AuthenticatedUser {
                     );
                     identity.forget();
                 }
+            } else {
+                warn!(LOG, "User not logged in!")
             };
             Err(ErrorUnauthorized("unauthorized"))
         })
