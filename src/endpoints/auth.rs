@@ -5,7 +5,7 @@ use crate::logging::LOG;
 use crate::notifier::{Channel, Notifier};
 
 use actix_identity::Identity;
-use actix_web::{web, HttpResponse, Responder, Result};
+use actix_web::{web, Result};
 use serde::{Deserialize, Serialize};
 use slog::info;
 
@@ -36,6 +36,15 @@ pub async fn protected(user: AuthorizedUser) -> Result<&'static str> {
     Ok("Welcome to protected land!")
 }
 
+pub async fn me (identity: Identity, sessions: web::Data<Sessions>) -> Result<web::Json<Option<AuthenticatedUser>>> {
+    if let Some(username) = identity.identity() {
+        let user = sessions.get(&username).map(|x| x.clone());
+        Ok(web::Json(user))
+    } else {
+        Ok(web::Json(None))
+    }
+}
+
 pub async fn login(
     login: web::Json<Login>,
     db: web::Data<Pool>,
@@ -53,7 +62,7 @@ pub async fn login(
     Ok(web::Json(user))
 }
 
-pub async fn logout(sessions: web::Data<Sessions>, identity: Identity) -> impl Responder {
+pub async fn logout(sessions: web::Data<Sessions>, identity: Identity) -> Result<web::Json<Option<String>>> {
     if let Some(username) = identity.identity() {
         identity.forget();
         if let Some(user) = sessions.remove(&username) {
@@ -62,5 +71,5 @@ pub async fn logout(sessions: web::Data<Sessions>, identity: Identity) -> impl R
     } else {
         info!(LOG, "Can not log out user that is not logged in!");
     }
-    HttpResponse::Unauthorized().finish()
+    Ok(web::Json(None))
 }

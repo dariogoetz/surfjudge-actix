@@ -95,6 +95,7 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 "/advancements/{category_id}",
                 web::get().to(heat_advancement::get_by_category_id),
             )
+            .route("/auth/me", web::get().to(auth::me))
             .route("/auth/session_test", web::get().to(auth::session_test))
             .route("/auth/protected", web::get().to(auth::protected))
             .route("/auth/login", web::post().to(auth::login))
