@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use sqlx::{Done, FromRow, Type};
 
-#[derive(Type, Debug, Serialize, Deserialize)]
+#[derive(Type, Debug, Serialize, Deserialize, Clone)]
 #[sqlx(rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum HeatStateType {

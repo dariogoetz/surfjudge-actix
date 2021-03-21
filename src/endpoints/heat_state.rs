@@ -1,8 +1,8 @@
-use crate::authorization::AuthorizedUser;
 use crate::database::Pool;
 use crate::logging::LOG;
-use crate::models::heat_state::{HeatState, HeatStateType};
+use crate::models::{heat::Heat, heat_state::{HeatState, HeatStateType}};
 use crate::notifier::{Channel, Notifier};
+use crate::{authorization::AuthorizedUser};
 
 use actix_web::{error, web, Result};
 use chrono::Utc;
@@ -10,9 +10,10 @@ use serde::Serialize;
 use serde_json::json;
 use slog::info;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct ResultHeatState {
     pub state: HeatStateType,
+    pub remaining_time_s: f64,
 }
 
 pub async fn get_by_heat_id(
@@ -24,37 +25,35 @@ pub async fn get_by_heat_id(
         .map_err(|e| {
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
+    
 
-    let result = match result {
-        Some(heat_state) => heat_state.state,
+    let state = match &result {
+        Some(heat_state) => heat_state.state.clone(),
         None => HeatStateType::Inactive,
     };
-    Ok(web::Json(ResultHeatState { state: result }))
-}
-
-pub async fn get_remaining_heat_time(
-    web::Path(heat_id): web::Path<u32>,
-    db: web::Data<Pool>,
-) -> Result<web::Json<Option<f64>>> {
-    let result = HeatState::find_by_heat_id(db.get_ref(), heat_id)
-        .await
-        .ok()
-        .unwrap_or(None);
-
-    let result = match result {
-        None => None,
+    let remaining_time_s = match &result {
+        // if the heat is not active, there is no heat state row -> take duration from heat data
+        None => Heat::find_by_id(db.get_ref(), heat_id, false)
+            .await
+            .map_err(|e| {
+                error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+            })?
+            .map(|h| h.duration * 60.0)
+            .unwrap_or(0.0),
         Some(heat_state) => match heat_state.state {
-            HeatStateType::Paused => heat_state.remaining_time_s.map(|t| t.max(0.0)),
+            HeatStateType::Paused => heat_state.remaining_time_s.unwrap_or(0.0).max(0.0),
             HeatStateType::Active => {
                 let now = Utc::now().naive_utc();
                 let diff = (heat_state.end_datetime - now).num_milliseconds() as f64 / 1000.0;
-                Some(diff.max(0.0))
+                diff.max(0.0)
             }
-            _ => None,
+            _ => 0.0,
         },
     };
-
-    Ok(web::Json(result))
+    Ok(web::Json(ResultHeatState {
+        state,
+        remaining_time_s,
+    }))
 }
 
 pub async fn start_heat(
