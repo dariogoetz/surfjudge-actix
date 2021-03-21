@@ -53,10 +53,7 @@ async fn main() -> Result<()> {
                     .name("surfjudge-actix")
                     .secure(false),
             ))
-            .wrap(
-                Cors::new() // enable cors for frontend development with webpack dev server
-                    .finish(),
-            )
+            .wrap(Cors::permissive())
             .wrap(Compress::default())
             // enable logger - always register actix-web Logger middleware last
             .wrap(Logger::default())
