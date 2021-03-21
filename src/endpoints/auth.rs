@@ -1,8 +1,6 @@
 use crate::authentication::{authenticate_user, AuthenticatedUser, Sessions};
-use crate::authorization::AuthorizedUser;
 use crate::database::Pool;
 use crate::logging::LOG;
-use crate::notifier::{Channel, Notifier};
 
 use actix_identity::Identity;
 use actix_web::{web, Result};
@@ -14,26 +12,6 @@ use slog::info;
 pub struct Login {
     pub username: String,
     pub password: String,
-}
-
-pub async fn session_test(identity: Identity, notifier: web::Data<Notifier>) -> Result<String> {
-    notifier
-        .send_channel(Channel::ActiveHeats, serde_json::json!("hallo"))
-        .await
-        .unwrap();
-
-    if let Some(username) = identity.identity() {
-        info!(LOG, "You are {:?}", username);
-        Ok(format!("Welcome {:?}", username))
-    } else {
-        info!(LOG, "You are not logged in!");
-        Ok("Welcome unknown person!".to_string())
-    }
-}
-
-pub async fn protected(user: AuthorizedUser) -> Result<&'static str> {
-    info!(LOG, "Accessing protected resource from {:?}", user);
-    Ok("Welcome to protected land!")
 }
 
 pub async fn me (identity: Identity, sessions: web::Data<Sessions>) -> Result<web::Json<Option<AuthenticatedUser>>> {
