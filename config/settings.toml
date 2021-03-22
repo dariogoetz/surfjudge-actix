@@ -2,10 +2,12 @@ debug = false
 server_address = "127.0.0.1:8081"
 zmq_address = "127.0.0.1:6545"
 template_dir = "templates"
+serve_private_api = true
 
 [ui_settings]
 websocket_url = "wss://websocket.surfjudge.de"
-api_path = "/public"
+public_api_path = "/public"
+private_api_path = "/private"
 
 [database]
 url = "postgresql://postgres:surfjudge2000@localhost:5432/postgres"
