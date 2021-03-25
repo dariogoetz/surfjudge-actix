@@ -3,6 +3,7 @@ use rand::Rng;
 use slog::info;
 use std::sync::Arc;
 
+use actix::prelude::*;
 use actix_cors::Cors;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{middleware::Compress, middleware::Logger, web, App, HttpServer};
@@ -17,6 +18,7 @@ mod models;
 mod notifier;
 mod routes;
 mod templates;
+mod websocket_server;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -40,6 +42,8 @@ async fn main() -> Result<()> {
     );
     let notifier = notifier::Notifier::new(&format!("tcp://{}", CONFIG.zmq_address)).await?;
 
+    let websocket_server = websocket_server::WebSocketServer::new().start();
+
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
     let sessions = web::Data::new(Sessions::new());
     let server = HttpServer::new(move || {
@@ -49,6 +53,7 @@ async fn main() -> Result<()> {
             .data(pool.clone())
             .data(tmpl.clone())
             .data(notifier.clone())
+            .data(websocket_server.clone())
             .wrap(Compress::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&private_key)
@@ -66,6 +71,8 @@ async fn main() -> Result<()> {
         } else {
             app
         };
+
+        let app = app.route("/ws", web::get().to(websocket_server::ws_route));
 
         // page routes need to come last due to the "" scope
         app.configure(routes::static_routes)

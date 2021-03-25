@@ -1,21 +1,53 @@
 use crate::logging::LOG;
 
-use actix::prelude::*;
-use std::collections::{HashMap, HashSet};
+use std::{fmt, collections::{HashMap, HashSet}};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use slog::{debug, info, warn};
 
-use slog::{debug, info};
+use actix::prelude::*;
+use actix_web::{web, Error, HttpRequest, HttpResponse};
+use actix_web_actors::ws;
 
+
+/// Entry point for our websocket route
+pub async fn ws_route(
+    req: HttpRequest,
+    stream: web::Payload,
+    srv: web::Data<Addr<WebSocketServer>>,
+) -> Result<HttpResponse, Error> {
+    ws::start(
+        WebSocketSession {
+            id: None,
+            server_addr: srv.get_ref().clone(),
+        },
+        &req,
+        stream,
+    )
+}
 
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Debug, Hash, Copy)]
-struct ClientID(usize);
+pub struct ClientID(usize);
+
+impl fmt::Display for ClientID {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Message {
-    channel: String,
-    message: String,
+pub struct WSActionMessage {
+    pub action: String,
+    pub channel: String,
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WSMessage {
+    pub channel: String,
+    pub message: String,
 }
 
 pub struct WebSocketServer {
@@ -29,14 +61,14 @@ impl WebSocketServer {
     pub fn new() -> Self {
         Self {
             sessions: HashMap::new(),
-            channels: HashMap::new()
+            channels: HashMap::new(),
+            counter: 0,
         }
     }
 
     fn send_channel(&self, channel: &str, message: &str) {
-        let message = json!({"channel": channel, "message": message});
-
         if let Some(sessions) = self.channels.get(channel) {
+            let message = json!({"channel": channel, "message": message});
             info!(
                 LOG,
                 "Sending message to {} clients in channel '{}': {}",
@@ -46,7 +78,7 @@ impl WebSocketServer {
             );
             for client_id in sessions.iter() {
                 if let Some(addr) = self.sessions.get(client_id) {
-                    let _ = addr.do_send(Message {channel: channel.to_owned(), message: message.to_owned()));
+                    let _ = addr.do_send(WSMessage { channel: channel.to_owned(), message: message.to_string() });
                 }
             }
         }
@@ -66,21 +98,21 @@ impl Actor for WebSocketServer {
 // Subscribe - subscribe websocket connection to a channel
 
 #[derive(Message)]
-#[rtype(ClientID)]
+#[rtype(result = "ClientID")]
 pub struct Connect {
-    pub addr: Recipient<Message>,
+    pub addr: Recipient<WSMessage>,
 }
 
 impl Handler<Connect> for WebSocketServer {
-    type Result = ClientID;
+    type Result = MessageResult<Connect>;
 
     fn handle(&mut self, msg: Connect, _: &mut Context<Self>) -> Self::Result {
-        let id = ClientId(self.counter);
+        let id = ClientID(self.counter);
         debug!(LOG, "Registering websocket with id '{}'", id);
         self.counter += 1;
         self.sessions.insert(id, msg.addr);
 
-        id
+        MessageResult(id)
     }
 }
 
@@ -96,14 +128,14 @@ impl Handler<Disconnect> for WebSocketServer {
     fn handle(&mut self, msg: Disconnect, _: &mut Context<Self>) -> Self::Result {
         debug!(LOG, "Unegistering websocket with id '{}'", msg.id);
         self.sessions.remove(&msg.id);
-        for (channel_name, channel) in &mut self.channels {
+        for (_, channel) in &mut self.channels {
             channel.remove(&msg.id);
         }
     }
 }
 
 #[derive(Message)]
-#[rtype(result = "()")]
+#[rtype(result = "()")]
 pub struct Subscribe {
     id: ClientID,
     channel: String,
@@ -118,7 +150,7 @@ impl Handler<Subscribe> for WebSocketServer {
             .entry(msg.channel.clone())
             .or_insert_with(HashSet::new)
             .insert(msg.id);
-        debug!("Channels: {:?}", self.channels);
+        debug!(LOG, "Channels: {:?}", self.channels);
     }
 }
 
@@ -144,7 +176,7 @@ struct WebSocketSession {
 }
 
 impl Actor for WebSocketSession {
-    type Context = ws.WebsocketContext<Self>;
+    type Context = ws::WebsocketContext<Self>;
 
     // Method is called on actor start
     // Session is registered to WebSocketServer and receives a ClientID
@@ -177,11 +209,11 @@ impl Actor for WebSocketSession {
     }
 }
 
-impl Handler<Message> for WebSocketSession {
+impl Handler<WSMessage> for WebSocketSession {
     type Result = ();
 
-    fn handle(&mut self, msg: Message, ctx: &mut Self::Context) {
-        ctx.text(json!(msg));
+    fn handle(&mut self, msg: WSMessage, ctx: &mut Self::Context) {
+        ctx.text(json!(msg).to_string());
     }
 }
 
@@ -200,4 +232,42 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketSession 
             }
             Ok(msg) => msg,
         };
+
+        match msg {
+            ws::Message::Ping(msg) => {
+                ctx.pong(&msg);
+            }
+            ws::Message::Pong(msg) => (),
+            ws::Message::Text(msg) => {
+                let msg: WSActionMessage = match serde_json::from_str(&msg) {
+                    Ok(msg) => msg,
+                    Err(_err) => {
+                        warn!(LOG,
+                            "Error parsing websocket message '{}' to json.",
+                            msg
+                        );
+                        return;
+                    }
+                };
+                debug!(LOG, "Dispatching message from WebSocket: {:?}", msg);
+                if msg.action == "subscribe" {
+                    if let Some(id) = self.id {
+                        self.server_addr.do_send(Subscribe { id, channel: msg.channel });
+                    } 
+                } else {
+                    warn!(LOG, "Unknown action: '{}'", msg.action);
+                }                
+            }
+            ws::Message::Binary(_) => warn!(LOG, "Unexpected binary websocket message!"),
+            ws::Message::Close(reason) => {
+                ctx.close(reason);
+                ctx.stop();
+            }
+            ws::Message::Continuation(_) => {
+                ctx.stop();
+            }
+            ws::Message::Nop => (),
+            _ => (),
+        }
     }
+}
