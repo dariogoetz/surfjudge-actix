@@ -98,7 +98,7 @@ impl Notifier {
 
     pub async fn send_channel(&self, channel: Channel, message: Value) -> Result<()> {
         let msg = SendChannel {
-            channel: channel.clone(),
+            channel,
             message: message.to_string(),
         };
         if let Some(sender) = &self.ws {
