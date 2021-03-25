@@ -1,5 +1,7 @@
 use crate::logging::LOG;
+use crate::websocket_server::SendChannel;
 
+use actix::Recipient;
 use anyhow::Result;
 use slog::warn;
 use std::sync::mpsc::{self, Sender};
@@ -9,26 +11,37 @@ use zmq::{Context, PUB};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum Channel {
     ActiveHeats,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct NotifierMessage {
-    channel: Channel,
-    message: String,
+    Results,
+    Advancements,
+    Participants,
 }
 
 #[derive(Clone)]
 pub struct Notifier {
-    sender: Sender<NotifierMessage>,
+    zmq: Option<Sender<SendChannel>>,
+    ws: Option<Recipient<SendChannel>>,
 }
 
 impl Notifier {
-    pub async fn new(addr: &str) -> Result<Notifier> {
-        let (server_sender, server_receiver) = mpsc::channel::<NotifierMessage>();
+    pub fn new() -> Result<Notifier> {
+        Ok(Notifier {
+            zmq: None,
+            ws: None,
+        })
+    }
+
+    pub fn ws(mut self, addr: Recipient<SendChannel>) -> Result<Self> {
+        self.ws = Some(addr);
+
+        Ok(self)
+    }
+
+    pub fn zmq(mut self, addr: &str) -> Result<Notifier> {
+        let (server_sender, server_receiver) = mpsc::channel::<SendChannel>();
 
         let context = Context::new();
         let publisher = context.socket(PUB).unwrap();
@@ -43,16 +56,22 @@ impl Notifier {
             }
         });
 
-        Ok(Notifier {
-            sender: server_sender,
-        })
+        self.zmq = Some(server_sender);
+
+        Ok(self)
     }
 
     pub async fn send_channel(&self, channel: Channel, message: Value) -> Result<()> {
-        let msg = NotifierMessage {
-            channel: channel,
+        let msg = SendChannel {
+            channel: channel.clone(),
             message: message.to_string(),
         };
-        Ok(self.sender.send(msg)?)
+        if let Some(sender) = &self.ws {
+            sender.do_send(msg.clone())?;
+        }
+        if let Some(sender) = &self.zmq {
+            sender.send(msg.clone())?;
+        }
+        Ok(())
     }
 }

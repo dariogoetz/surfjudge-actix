@@ -40,9 +40,11 @@ async fn main() -> Result<()> {
         LOG,
         "Connecting ZMQ publisher to port {:?}", CONFIG.zmq_address
     );
-    let notifier = notifier::Notifier::new(&format!("tcp://{}", CONFIG.zmq_address)).await?;
-
     let websocket_server = websocket_server::WebSocketServer::new().start();
+    let notifier = notifier::Notifier::new()?
+        .zmq(&format!("tcp://{}", CONFIG.zmq_address))?
+        .ws(websocket_server.clone().recipient())?;
+
 
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
     let sessions = web::Data::new(Sessions::new());
