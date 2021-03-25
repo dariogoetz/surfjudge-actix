@@ -20,27 +20,37 @@ pub enum Channel {
     Participants,
 }
 
+// TODO: vec of impl notifier
 #[derive(Clone)]
 pub struct Notifier {
-    zmq: Option<Sender<SendChannel>>,
-    ws: Option<Recipient<SendChannel>>,
+    zmq: Option<ZMQNotifier>,
+    ws: Option<WSNotifier>,
 }
 
-impl Notifier {
-    pub fn new() -> Result<Notifier> {
-        Ok(Notifier {
-            zmq: None,
-            ws: None,
-        })
+// TODO: trait for notifier
+#[derive(Clone)]
+pub struct WSNotifier {
+    addr: Recipient<SendChannel>,
+}
+
+impl WSNotifier {
+    pub fn new(addr: Recipient<SendChannel>) -> Result<Self> {
+        Ok(Self { addr })
     }
 
-    pub fn ws(mut self, addr: Recipient<SendChannel>) -> Result<Self> {
-        self.ws = Some(addr);
-
-        Ok(self)
+    pub async fn send_channel(&self, msg: &SendChannel) -> Result<()> {
+        self.addr.do_send(msg.clone())?;
+        Ok(())
     }
+}
 
-    pub fn zmq(mut self, addr: &str) -> Result<Notifier> {
+#[derive(Clone)]
+pub struct ZMQNotifier {
+    addr: Sender<SendChannel>
+}
+
+impl ZMQNotifier {
+    pub fn new(addr: &str) -> Result<Self> {
         let (server_sender, server_receiver) = mpsc::channel::<SendChannel>();
 
         let context = Context::new();
@@ -56,7 +66,32 @@ impl Notifier {
             }
         });
 
-        self.zmq = Some(server_sender);
+
+        Ok(Self { addr: server_sender})
+    }
+
+    pub async fn send_channel(&self, msg: &SendChannel) -> Result<()> {
+        self.addr.send(msg.clone())?;
+        Ok(())
+    }
+}
+
+impl Notifier {
+    pub fn new() -> Result<Notifier> {
+        Ok(Notifier {
+            zmq: None,
+            ws: None,
+        })
+    }
+
+    pub fn ws(mut self, notifier: WSNotifier) -> Result<Self> {
+        self.ws = Some(notifier);
+
+        Ok(self)
+    }
+
+    pub fn zmq(mut self, notifier: ZMQNotifier) -> Result<Self> {
+        self.zmq = Some(notifier);
 
         Ok(self)
     }
@@ -67,10 +102,10 @@ impl Notifier {
             message: message.to_string(),
         };
         if let Some(sender) = &self.ws {
-            sender.do_send(msg.clone())?;
+            sender.send_channel(&msg).await?;
         }
         if let Some(sender) = &self.zmq {
-            sender.send(msg.clone())?;
+            sender.send_channel(&msg).await?;
         }
         Ok(())
     }

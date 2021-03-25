@@ -41,9 +41,11 @@ async fn main() -> Result<()> {
         "Connecting ZMQ publisher to port {:?}", CONFIG.zmq_address
     );
     let websocket_server = websocket_server::WebSocketServer::new().start();
+    let ws_notifier = notifier::WSNotifier::new(websocket_server.clone().recipient())?;
+    let zmq_notifier = notifier::ZMQNotifier::new(&format!("tcp://{}", CONFIG.zmq_address))?;
     let notifier = notifier::Notifier::new()?
-        .zmq(&format!("tcp://{}", CONFIG.zmq_address))?
-        .ws(websocket_server.clone().recipient())?;
+        .zmq(zmq_notifier)?
+        .ws(ws_notifier)?;
 
 
     let private_key = rand::thread_rng().gen::<[u8; 32]>();

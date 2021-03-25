@@ -52,7 +52,6 @@ pub struct WSMessage {
 }
 
 pub struct WebSocketServer {
-    // Recipient is an actix actor
     sessions: HashMap<ClientID, Recipient<WSMessage>>,
     channels: HashMap<Channel, HashSet<ClientID>>,
     counter: usize,
