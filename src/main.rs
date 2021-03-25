@@ -43,9 +43,11 @@ async fn main() -> Result<()> {
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
     let sessions = web::Data::new(Sessions::new());
     let server = HttpServer::new(move || {
-        App::new()
+        let app = App::new()
             .app_data(sessions.clone())
             .app_data(oso_state.clone())
+            .data(pool.clone())
+            .data(tmpl.clone())
             .data(notifier.clone())
             .wrap(Compress::default())
             .wrap(IdentityService::new(
@@ -57,14 +59,31 @@ async fn main() -> Result<()> {
             .wrap(Compress::default())
             // enable logger - always register actix-web Logger middleware last
             .wrap(Logger::default())
-            .configure(routes::routes)
-            .data(pool.clone())
-            .data(tmpl.clone())
+            .configure(routes::public_api_routes);
+
+        let app = if CONFIG.serve_private_api {
+            app.configure(routes::private_api_routes)
+        } else {
+            app
+        };
+
+        // page routes need to come last due to the "" scope
+        app.configure(routes::static_routes)
+            .configure(routes::page_routes)
     })
     .bind(&CONFIG.server_address)?;
 
     info!(LOG, "Starting server at {:?}", CONFIG.server_address);
-    info!(LOG, "Serving API on {:?}", CONFIG.ui_settings.api_path);
+    info!(
+        LOG,
+        "Serving public API on {:?}", CONFIG.ui_settings.public_api_path
+    );
+    if CONFIG.serve_private_api {
+        info!(
+            LOG,
+            "Serving private API on {:?}", CONFIG.ui_settings.private_api_path
+        );
+    }
     server.run().await?;
 
     Ok(())

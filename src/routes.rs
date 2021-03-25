@@ -7,13 +7,11 @@ use crate::endpoints::{
 use actix_files as fs;
 use actix_web::web;
 
-pub fn routes(cfg: &mut web::ServiceConfig) {
-    // serve static files
-    cfg.service(fs::Files::new("/static", "./static").show_files_listing());
+pub fn public_api_routes(cfg: &mut web::ServiceConfig) {
 
-    // rest API endpoints
+    // public rest API endpoints
     cfg.service(
-        web::scope(&CONFIG.ui_settings.api_path)
+        web::scope(&CONFIG.ui_settings.public_api_path)
             .route("/config", web::get().to(config::get_ui_config))
             .route("/heats", web::get().to(heat::get_all))
             .route("/heats/{id}", web::get().to(heat::get_by_id))
@@ -91,11 +89,25 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
                 "/advancements/{category_id}",
                 web::get().to(heat_advancement::get_by_category_id),
             )
+    );
+}
+
+pub fn private_api_routes(cfg: &mut web::ServiceConfig) {
+    // public rest API endpoints
+    cfg.service(
+        web::scope(&CONFIG.ui_settings.private_api_path)
             .route("/auth/me", web::get().to(auth::me))
             .route("/auth/login", web::post().to(auth::login))
-            .route("/auth/logout", web::post().to(auth::logout)),
+            .route("/auth/logout", web::post().to(auth::logout))
     );
+}
 
+pub fn page_routes(cfg: &mut web::ServiceConfig) {
     // web page endpoints
     cfg.service(web::scope("").route("/", web::get().to(pages::index)));
+}
+
+pub fn static_routes(cfg: &mut web::ServiceConfig) {
+    // serve static files
+    cfg.service(fs::Files::new("/static", "./static").show_files_listing());
 }

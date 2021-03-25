@@ -14,7 +14,8 @@ pub struct Database {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UISettings {
     pub websocket_url: String,
-    pub api_path: String,
+    pub public_api_path: String,
+    pub private_api_path: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -27,6 +28,7 @@ pub struct Settings {
     pub debug: String,
     pub server_address: String,
     pub zmq_address: String,
+    pub serve_private_api: bool,
     pub database: Database,
     pub ui_settings: UISettings,
     pub template_dir: String,
