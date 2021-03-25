@@ -46,7 +46,7 @@ impl WebSocketServer {
             );
             for client_id in sessions.iter() {
                 if let Some(addr) = self.sessions.get(client_id) {
-                    let _ = addr.do_send(Message(message.to_owned()));
+                    let _ = addr.do_send(Message {channel: channel.to_owned(), message: message.to_owned()));
                 }
             }
         }
@@ -121,3 +121,83 @@ impl Handler<Subscribe> for WebSocketServer {
         debug!("Channels: {:?}", self.channels);
     }
 }
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct SendChannel {
+    message: String,
+    channel: String,
+}
+
+impl Handler<SendChannel> for WebSocketServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: SendChannel, _: &mut Context<Self>) -> Self::Result {
+        debug!(LOG, "Sending message '{}' to channel '{}'", msg.message, msg.channel);
+        self.send_channel(&msg.channel, &msg.message);
+    }
+}
+
+struct WebSocketSession {
+    id: Option<ClientID>,
+    server_addr: Addr<WebSocketServer>,
+}
+
+impl Actor for WebSocketSession {
+    type Context = ws.WebsocketContext<Self>;
+
+    // Method is called on actor start
+    // Session is registered to WebSocketServer and receives a ClientID
+    fn started(&mut self, ctx: &mut Self::Context) {
+        let addr = ctx.address();
+        self.server_addr
+            .send(Connect {
+                addr: addr.recipient(),
+            })
+            .into_actor(self)
+            .then(|res, act, ctx| {
+                match res {
+                    // store client id received from server
+                    Ok(res) => act.id = Some(res),
+                    // something went wrong when connecting in server
+                    _ => ctx.stop(),
+
+                }
+                fut::ready(())
+            })
+            .wait(ctx);
+    }
+
+    fn stopping(&mut self, _: &mut Self::Context) -> Running {
+        // disconnect from server
+        if let Some(id) = self.id {
+            self.server_addr.do_send(Disconnect { id })
+        }
+        Running::Stop
+    }
+}
+
+impl Handler<Message> for WebSocketSession {
+    type Result = ();
+
+    fn handle(&mut self, msg: Message, ctx: &mut Self::Context) {
+        ctx.text(json!(msg));
+    }
+}
+
+// TODO: Handle messages from websocket connection (subscribe)
+/// WebSocket message handler
+impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketSession {
+    fn handle(
+        &mut self,
+        msg: Result<ws::Message, ws::ProtocolError>,
+        ctx: &mut Self::Context,
+    ) {
+        let msg = match msg {
+            Err(_) => {
+                ctx.stop();
+                return;
+            }
+            Ok(msg) => msg,
+        };
+    }
