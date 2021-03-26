@@ -97,9 +97,8 @@ impl Notifier {
         })
     }
 
-    pub fn register(self, notifier: Box<dyn Notify + Send>) -> Result<Self> {
+    pub fn register(&mut self, notifier: Box<dyn Notify + Send>) -> Result<&mut Self> {
         self.notifiers.lock().unwrap().push(notifier);
-
         Ok(self)
     }
 

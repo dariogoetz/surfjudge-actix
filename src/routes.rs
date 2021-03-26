@@ -1,6 +1,6 @@
 use crate::configuration::CONFIG;
 use crate::endpoints::{
-    auth, category, config, heat, heat_advancement, heat_state, lycra_color, pages, participation,
+    auth, category, heat, heat_advancement, heat_state, lycra_color, pages, participation,
     result, surfer, tournament,
 };
 
@@ -11,8 +11,7 @@ pub fn public_api_routes(cfg: &mut web::ServiceConfig) {
 
     // public rest API endpoints
     cfg.service(
-        web::scope(&CONFIG.ui_settings.public_api_path)
-            .route("/config", web::get().to(config::get_ui_config))
+        web::scope(&CONFIG.api.public_path.as_ref().unwrap())
             .route("/heats", web::get().to(heat::get_all))
             .route("/heats/{id}", web::get().to(heat::get_by_id))
             .route("/heats/{id}/results", web::get().to(result::get_by_heat_id))
@@ -95,7 +94,7 @@ pub fn public_api_routes(cfg: &mut web::ServiceConfig) {
 pub fn private_api_routes(cfg: &mut web::ServiceConfig) {
     // public rest API endpoints
     cfg.service(
-        web::scope(&CONFIG.ui_settings.private_api_path)
+        web::scope(&CONFIG.api.private_path.as_ref().unwrap())
             .route("/auth/me", web::get().to(auth::me))
             .route("/auth/login", web::post().to(auth::login))
             .route("/auth/logout", web::post().to(auth::logout))

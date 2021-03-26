@@ -1,7 +1,7 @@
-use crate::configuration::{UISettings, CONFIG};
+use crate::configuration::{API, CONFIG};
 use actix_web::{web, Result};
 
-pub async fn get_ui_config() -> Result<web::Json<UISettings>> {
-    let result = CONFIG.ui_settings.clone();
+pub async fn get_ui_config() -> Result<web::Json<API>> {
+    let result = CONFIG.api.clone();
     Ok(web::Json(result))
 }

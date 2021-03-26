@@ -1,4 +1,3 @@
-use crate::configuration::CONFIG;
 use crate::templates::{Context, Templates};
 
 use actix_web::{web, HttpResponse, Responder};
@@ -6,7 +5,6 @@ use actix_web::{web, HttpResponse, Responder};
 pub fn get_default_template_context() -> Context {
     let mut ctx = Context::new();
     ctx.insert("description", &"Surfjudge - actix");
-    ctx.insert("websocket_url", &CONFIG.ui_settings.websocket_url);
 
     ctx
 }
