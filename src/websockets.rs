@@ -246,7 +246,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketSession 
             ws::Message::Ping(msg) => {
                 ctx.pong(&msg);
             }
-            ws::Message::Pong(msg) => (),
+            ws::Message::Pong(_msg) => (),
             ws::Message::Text(msg) => {
                 let msg: WSActionMessage = match serde_json::from_str(&msg) {
                     Ok(msg) => msg,
@@ -279,7 +279,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketSession 
                 ctx.stop();
             }
             ws::Message::Nop => (),
-            _ => (),
         }
     }
 }

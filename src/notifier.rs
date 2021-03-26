@@ -1,7 +1,7 @@
 use crate::logging::LOG;
 use crate::websockets::SendChannel;
 
-use std::sync::RwLock;
+use std::sync::{Arc, Mutex};
 use actix::Recipient;
 use anyhow::Result;
 use slog::warn;
@@ -21,12 +21,12 @@ pub enum Channel {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct NotifierMessage {
+pub struct NotifierMessage {
     channel: Channel,
     message: String,
 }
 
-trait Notify {
+pub trait Notify {
     fn send_channel(&self, msg: &NotifierMessage) -> Result<()>;
 }
 
@@ -42,7 +42,6 @@ impl WSNotifier {
 }
 
 impl Notify for WSNotifier {
-
     fn send_channel(&self, msg: &NotifierMessage) -> Result<()> {
         let msg = SendChannel {
             channel: msg.channel.clone(),
@@ -53,7 +52,6 @@ impl Notify for WSNotifier {
     }
 }
 
-#[derive(Clone)]
 pub struct ZMQNotifier {
     addr: Sender<NotifierMessage>
 }
@@ -74,14 +72,12 @@ impl ZMQNotifier {
                 }
             }
         });
-
-        Ok(Self { addr: server_sender})
+        Ok(Self { addr: server_sender })
     }
 
 }
 
 impl Notify for ZMQNotifier {
-
     fn send_channel(&self, msg: &NotifierMessage) -> Result<()> {
         self.addr.send(msg.clone())?;
         Ok(())
@@ -89,55 +85,32 @@ impl Notify for ZMQNotifier {
 }
 
 
-
-// TODO: vec of impl notifier
 #[derive(Clone)]
 pub struct Notifier {
-    notifiers: RwLock<Vec<Box<dyn Notify + Sync + Send>>>,
-    zmq: Option<ZMQNotifier>,
-    ws: Option<WSNotifier>,
+    notifiers: Arc<Mutex<Vec<Box<dyn Notify + Send>>>>,
 }
 
 impl Notifier {
     pub fn new() -> Result<Notifier> {
         Ok(Notifier {
-            notifiers: Arc::new(Vec::new()),
-            zmq: None,
-            ws: None,
+            notifiers: Arc::new(Mutex::new(Vec::new())),
         })
     }
 
-    pub fn register(mut self, notifier: Box<dyn Notify + Sync + Send>) -> Result<Self> {
-        self.notifiers.write().push(notifier);
+    pub fn register(self, notifier: Box<dyn Notify + Send>) -> Result<Self> {
+        self.notifiers.lock().unwrap().push(notifier);
 
         Ok(self)
     }
 
-    pub fn ws(mut self, notifier: WSNotifier) -> Result<Self> {
-        self.ws = Some(notifier);
-
-        Ok(self)
-    }
-
-    pub fn zmq(mut self, notifier: ZMQNotifier) -> Result<Self> {
-        self.zmq = Some(notifier);
-
-        Ok(self)
-    }
 
     pub fn send_channel(&self, channel: Channel, message: Value) -> Result<()> {
         let msg = NotifierMessage {
             channel,
             message: message.to_string(),
         };
-        for notifier in self.notifiers.read().iter() {
+        for notifier in self.notifiers.lock().unwrap().iter() {
             notifier.send_channel(&msg)?;
-        }
-        if let Some(sender) = &self.ws {
-            sender.send_channel(&msg)?;
-        }
-        if let Some(sender) = &self.zmq {
-            sender.send_channel(&msg)?;
         }
         Ok(())
     }
