@@ -1,7 +1,7 @@
 use crate::logging::LOG;
 use crate::websockets::SendChannel;
 
-use std::sync::Arc;
+use std::sync::RwLock;
 use actix::Recipient;
 use anyhow::Result;
 use slog::warn;
@@ -93,7 +93,7 @@ impl Notify for ZMQNotifier {
 // TODO: vec of impl notifier
 #[derive(Clone)]
 pub struct Notifier {
-    notifiers: Arc<Vec<Box<dyn Notify + Sync + Send>>>,
+    notifiers: RwLock<Vec<Box<dyn Notify + Sync + Send>>>,
     zmq: Option<ZMQNotifier>,
     ws: Option<WSNotifier>,
 }
@@ -108,7 +108,7 @@ impl Notifier {
     }
 
     pub fn register(mut self, notifier: Box<dyn Notify + Sync + Send>) -> Result<Self> {
-        // self.notifiers.push(notifier);
+        self.notifiers.write().push(notifier);
 
         Ok(self)
     }
@@ -130,7 +130,7 @@ impl Notifier {
             channel,
             message: message.to_string(),
         };
-        for notifier in self.notifiers.iter() {
+        for notifier in self.notifiers.read().iter() {
             notifier.send_channel(&msg)?;
         }
         if let Some(sender) = &self.ws {

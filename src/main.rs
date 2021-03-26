@@ -43,9 +43,9 @@ async fn main() -> Result<()> {
     let websocket_server = websockets::WebSocketServer::new().start();
     let ws_notifier = notifier::WSNotifier::new(websocket_server.clone().recipient())?;
     let zmq_notifier = notifier::ZMQNotifier::new(&format!("tcp://{}", CONFIG.zmq_address))?;
-    let notifier = notifier::Notifier::new()?
+    let notifier = Arc::new(notifier::Notifier::new()?
         .zmq(zmq_notifier)?
-        .ws(ws_notifier)?;
+        .ws(ws_notifier)?);
 
 
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
