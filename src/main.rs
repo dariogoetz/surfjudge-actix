@@ -18,7 +18,7 @@ mod models;
 mod notifier;
 mod routes;
 mod templates;
-mod websocket_server;
+mod websockets;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -40,7 +40,7 @@ async fn main() -> Result<()> {
         LOG,
         "Connecting ZMQ publisher to port {:?}", CONFIG.zmq_address
     );
-    let websocket_server = websocket_server::WebSocketServer::new().start();
+    let websocket_server = websockets::WebSocketServer::new().start();
     let ws_notifier = notifier::WSNotifier::new(websocket_server.clone().recipient())?;
     let zmq_notifier = notifier::ZMQNotifier::new(&format!("tcp://{}", CONFIG.zmq_address))?;
     let notifier = notifier::Notifier::new()?
@@ -76,7 +76,7 @@ async fn main() -> Result<()> {
             app
         };
 
-        let app = app.route("/ws", web::get().to(websocket_server::ws_route));
+        let app = app.route("/ws", web::get().to(websockets::ws_route));
 
         // page routes need to come last due to the "" scope
         app.configure(routes::static_routes)

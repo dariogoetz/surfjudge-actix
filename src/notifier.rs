@@ -1,5 +1,5 @@
 use crate::logging::LOG;
-use crate::websocket_server::SendChannel;
+use crate::websockets::SendChannel;
 
 use actix::Recipient;
 use anyhow::Result;
