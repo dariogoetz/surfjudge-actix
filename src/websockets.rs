@@ -1,15 +1,17 @@
 use crate::logging::LOG;
 use crate::notifier::Channel;
 
-use std::{fmt, collections::{HashMap, HashSet}};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use slog::{debug, info, warn};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt,
+};
 
 use actix::prelude::*;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
-
 
 /// Entry point for our websocket route
 pub async fn ws_route(
@@ -27,7 +29,7 @@ pub async fn ws_route(
     )
 }
 
-
+// identifier for websocket clients
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Debug, Hash, Copy)]
 pub struct ClientID(usize);
 
@@ -37,12 +39,14 @@ impl fmt::Display for ClientID {
     }
 }
 
+// message to be received from websocket connections
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WSActionMessage {
-    pub action: String,
     pub channel: Channel,
+    pub action: String,
 }
 
+// message to be sent to websocket connections
 #[derive(Message)]
 #[rtype(result = "()")]
 #[derive(Serialize, Deserialize, Debug)]
@@ -65,24 +69,6 @@ impl WebSocketServer {
             counter: 0,
         }
     }
-
-    fn send_channel(&self, channel: &Channel, message: &str) {
-        if let Some(sessions) = self.channels.get(channel) {
-            let message = json!({"channel": channel, "message": message});
-            info!(
-                LOG,
-                "Sending message to {} clients in channel '{:?}': {}",
-                sessions.len(),
-                channel,
-                message
-            );
-            for client_id in sessions.iter() {
-                if let Some(addr) = self.sessions.get(client_id) {
-                    let _ = addr.do_send(WSMessage { channel: channel.to_owned(), message: message.to_string() });
-                }
-            }
-        }
-    }
 }
 
 impl Actor for WebSocketServer {
@@ -90,7 +76,6 @@ impl Actor for WebSocketServer {
     /// with other actors.
     type Context = Context<Self>;
 }
-
 
 // Messages that can be sent to the WebSocketServer
 // Connect - new websocket connection
@@ -120,7 +105,7 @@ impl Handler<Connect> for WebSocketServer {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct Disconnect {
-    pub id: ClientID
+    pub id: ClientID,
 }
 
 impl Handler<Disconnect> for WebSocketServer {
@@ -146,7 +131,10 @@ impl Handler<Subscribe> for WebSocketServer {
     type Result = ();
 
     fn handle(&mut self, msg: Subscribe, _: &mut Context<Self>) -> Self::Result {
-        debug!(LOG, "Subscribing '{}' to channel '{:?}'", msg.id, msg.channel);
+        debug!(
+            LOG,
+            "Subscribing '{}' to channel '{:?}'", msg.id, msg.channel
+        );
         self.channels
             .entry(msg.channel.to_owned())
             .or_insert_with(HashSet::new)
@@ -155,7 +143,7 @@ impl Handler<Subscribe> for WebSocketServer {
     }
 }
 
-#[derive(Serialize, Message, Clone)]
+#[derive(Serialize, Message)]
 #[rtype(result = "()")]
 pub struct SendChannel {
     pub message: String,
@@ -166,8 +154,29 @@ impl Handler<SendChannel> for WebSocketServer {
     type Result = ();
 
     fn handle(&mut self, msg: SendChannel, _: &mut Context<Self>) -> Self::Result {
-        debug!(LOG, "Sending message '{}' to channel '{:?}'", msg.message, msg.channel);
-        self.send_channel(&msg.channel, &msg.message);
+        debug!(
+            LOG,
+            "Sending message '{}' to channel '{:?}'", msg.message, msg.channel
+        );
+
+        if let Some(sessions) = self.channels.get(&msg.channel) {
+            let message = json!(msg);
+            info!(
+                LOG,
+                "Sending message to {} clients in channel '{:?}': {}",
+                sessions.len(),
+                msg.channel,
+                message
+            );
+            for client_id in sessions.iter() {
+                if let Some(addr) = self.sessions.get(client_id) {
+                    let _ = addr.do_send(WSMessage {
+                        channel: msg.channel.to_owned(),
+                        message: message.to_string(),
+                    });
+                }
+            }
+        }
     }
 }
 
@@ -194,7 +203,6 @@ impl Actor for WebSocketSession {
                     Ok(res) => act.id = Some(res),
                     // something went wrong when connecting in server
                     _ => ctx.stop(),
-
                 }
                 fut::ready(())
             })
@@ -220,11 +228,7 @@ impl Handler<WSMessage> for WebSocketSession {
 
 /// WebSocket message handler
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketSession {
-    fn handle(
-        &mut self,
-        msg: Result<ws::Message, ws::ProtocolError>,
-        ctx: &mut Self::Context,
-    ) {
+    fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         let msg = match msg {
             Err(_) => {
                 ctx.stop();
@@ -242,9 +246,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketSession 
                 let msg: WSActionMessage = match serde_json::from_str(&msg) {
                     Ok(msg) => msg,
                     Err(_err) => {
-                        warn!(LOG,
-                            "Error parsing websocket message '{}' to json. Unknown channel?",
-                            msg
+                        warn!(
+                            LOG,
+                            "Error parsing websocket message '{}' to json. Unknown channel?", msg
                         );
                         return;
                     }
@@ -252,7 +256,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketSession 
                 debug!(LOG, "Dispatching message from WebSocket: {:?}", msg);
                 if msg.action == "subscribe" {
                     if let Some(id) = self.id {
-                        self.server_addr.do_send(Subscribe { id, channel: msg.channel });
+                        self.server_addr.do_send(Subscribe {
+                            id,
+                            channel: msg.channel,
+                        });
                     }
                 } else {
                     warn!(LOG, "Unknown action: '{}'", msg.action);

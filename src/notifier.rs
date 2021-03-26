@@ -20,6 +20,12 @@ pub enum Channel {
     Participants,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct NotifierMessage {
+    channel: Channel,
+    message: String,
+}
+
 // TODO: vec of impl notifier
 #[derive(Clone)]
 pub struct Notifier {
@@ -38,20 +44,24 @@ impl WSNotifier {
         Ok(Self { addr })
     }
 
-    pub async fn send_channel(&self, msg: &SendChannel) -> Result<()> {
-        self.addr.do_send(msg.clone())?;
+    async fn send_channel(&self, msg: &NotifierMessage) -> Result<()> {
+        let msg = SendChannel {
+            channel: msg.channel.clone(),
+            message: msg.message.clone()
+        };
+        self.addr.do_send(msg)?;
         Ok(())
     }
 }
 
 #[derive(Clone)]
 pub struct ZMQNotifier {
-    addr: Sender<SendChannel>
+    addr: Sender<NotifierMessage>
 }
 
 impl ZMQNotifier {
     pub fn new(addr: &str) -> Result<Self> {
-        let (server_sender, server_receiver) = mpsc::channel::<SendChannel>();
+        let (server_sender, server_receiver) = mpsc::channel::<NotifierMessage>();
 
         let context = Context::new();
         let publisher = context.socket(PUB).unwrap();
@@ -70,7 +80,7 @@ impl ZMQNotifier {
         Ok(Self { addr: server_sender})
     }
 
-    pub async fn send_channel(&self, msg: &SendChannel) -> Result<()> {
+    async fn send_channel(&self, msg: &NotifierMessage) -> Result<()> {
         self.addr.send(msg.clone())?;
         Ok(())
     }
@@ -97,7 +107,7 @@ impl Notifier {
     }
 
     pub async fn send_channel(&self, channel: Channel, message: Value) -> Result<()> {
-        let msg = SendChannel {
+        let msg = NotifierMessage {
             channel,
             message: message.to_string(),
         };
