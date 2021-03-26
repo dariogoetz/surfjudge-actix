@@ -13,7 +13,7 @@ use actix::prelude::*;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 
-/// Entry point for our websocket route
+/// Entry point for the websocket route
 pub async fn ws_route(
     req: HttpRequest,
     stream: web::Payload,
@@ -55,6 +55,8 @@ pub struct WSMessage {
     pub message: String,
 }
 
+
+
 pub struct WebSocketServer {
     sessions: HashMap<ClientID, Recipient<WSMessage>>,
     channels: HashMap<Channel, HashSet<ClientID>>,
@@ -72,8 +74,8 @@ impl WebSocketServer {
 }
 
 impl Actor for WebSocketServer {
-    /// We are going to use simple Context, we just need ability to communicate
-    /// with other actors.
+    // We are going to use simple Context, we just need ability to communicate
+    // with other actors.
     type Context = Context<Self>;
 }
 
@@ -180,6 +182,8 @@ impl Handler<SendChannel> for WebSocketServer {
     }
 }
 
+
+
 struct WebSocketSession {
     id: Option<ClientID>,
     server_addr: Addr<WebSocketServer>,
@@ -218,6 +222,7 @@ impl Actor for WebSocketSession {
     }
 }
 
+// send a WSMessage to the client
 impl Handler<WSMessage> for WebSocketSession {
     type Result = ();
 
@@ -226,7 +231,7 @@ impl Handler<WSMessage> for WebSocketSession {
     }
 }
 
-/// WebSocket message handler
+// Receive WSActionMessages from client
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketSession {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         let msg = match msg {

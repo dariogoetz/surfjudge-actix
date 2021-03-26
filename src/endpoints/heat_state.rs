@@ -78,7 +78,6 @@ pub async fn start_heat(
                 "msg": "start_heat"
             }),
         )
-        .await
         .unwrap();
     Ok("Started heat!")
 }
@@ -104,7 +103,6 @@ pub async fn stop_heat(
                 "msg": "stop_heat"
             }),
         )
-        .await
         .unwrap();
     Ok("Stopped heat!")
 }
@@ -130,7 +128,6 @@ pub async fn toggle_heat_pause(
                 "msg": "toggle_heat_pause"
             }),
         )
-        .await
         .unwrap();
     Ok("Toggled heat pause!")
 }
@@ -156,7 +153,6 @@ pub async fn reset_heat_time(
                 "msg": "reset_heat_time"
             }),
         )
-        .await
         .unwrap();
     Ok("Reset heat time!")
 }
