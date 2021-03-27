@@ -65,6 +65,7 @@ async fn main() -> Result<()> {
 
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
     let sessions = web::Data::new(Sessions::new());
+    info!(LOG, "Starting server at {:?}", CONFIG.server_address);
     let server = HttpServer::new(move || {
         let app = App::new()
             .app_data(sessions.clone())
@@ -109,7 +110,6 @@ async fn main() -> Result<()> {
     if let Some(address) = &CONFIG.api.private_path {
         info!(LOG, "Serving private API on {:?}", address);
     }
-    info!(LOG, "Starting server at {:?}", CONFIG.server_address);
     server.run().await?;
 
     Ok(())
