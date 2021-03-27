@@ -1,8 +1,11 @@
+use crate::authorization::AuthorizedUser;
 use crate::database::Pool;
 use crate::logging::LOG;
-use crate::models::{heat::Heat, heat_state::{HeatState, HeatStateType}};
+use crate::models::{
+    heat::Heat,
+    heat_state::{HeatState, HeatStateType},
+};
 use crate::notifier::{Channel, Notifier};
-use crate::{authorization::AuthorizedUser};
 
 use actix_web::{error, web, Result};
 use chrono::Utc;
@@ -25,7 +28,6 @@ pub async fn get_by_heat_id(
         .map_err(|e| {
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
-    
 
     let state = match &result {
         Some(heat_state) => heat_state.state.clone(),
@@ -36,7 +38,10 @@ pub async fn get_by_heat_id(
         None => Heat::find_by_id(db.get_ref(), heat_id, false)
             .await
             .map_err(|e| {
-                error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+                error::ErrorInternalServerError(format!(
+                    "Error fetching data from database: {:?}",
+                    e
+                ))
             })?
             .map(|h| h.duration * 60.0)
             .unwrap_or(0.0),

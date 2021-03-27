@@ -1,7 +1,7 @@
 use slog::Logger;
 use sloggers::terminal::TerminalLoggerBuilder;
-use sloggers::Build;
 use sloggers::types::Severity;
+use sloggers::Build;
 
 use once_cell::sync::Lazy;
 

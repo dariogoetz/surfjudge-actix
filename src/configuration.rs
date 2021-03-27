@@ -30,7 +30,6 @@ pub struct Notifications {
     pub websocket_server_address: Option<String>,
 }
 
-
 #[derive(Deserialize, Debug)]
 pub struct Settings {
     pub debug: String,

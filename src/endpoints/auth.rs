@@ -14,7 +14,10 @@ pub struct Login {
     pub password: String,
 }
 
-pub async fn me (identity: Identity, sessions: web::Data<Sessions>) -> Result<web::Json<Option<AuthenticatedUser>>> {
+pub async fn me(
+    identity: Identity,
+    sessions: web::Data<Sessions>,
+) -> Result<web::Json<Option<AuthenticatedUser>>> {
     if let Some(username) = identity.identity() {
         let user = sessions.get(&username).map(|x| x.clone());
         Ok(web::Json(user))
@@ -40,7 +43,10 @@ pub async fn login(
     Ok(web::Json(user))
 }
 
-pub async fn logout(sessions: web::Data<Sessions>, identity: Identity) -> Result<web::Json<Option<String>>> {
+pub async fn logout(
+    sessions: web::Data<Sessions>,
+    identity: Identity,
+) -> Result<web::Json<Option<String>>> {
     if let Some(username) = identity.identity() {
         identity.forget();
         if let Some(user) = sessions.remove(&username) {

@@ -1,14 +1,13 @@
 use crate::configuration::CONFIG;
 use crate::endpoints::{
-    auth, category, heat, heat_advancement, heat_state, lycra_color, pages, participation,
-    result, surfer, tournament,
+    auth, category, heat, heat_advancement, heat_state, lycra_color, pages, participation, result,
+    surfer, tournament,
 };
 
 use actix_files as fs;
 use actix_web::web;
 
 pub fn public_api_routes(cfg: &mut web::ServiceConfig) {
-
     // public rest API endpoints
     cfg.service(
         web::scope(&CONFIG.api.public_path.as_ref().unwrap())
@@ -87,7 +86,7 @@ pub fn public_api_routes(cfg: &mut web::ServiceConfig) {
             .route(
                 "/advancements/{category_id}",
                 web::get().to(heat_advancement::get_by_category_id),
-            )
+            ),
     );
 }
 
@@ -97,7 +96,7 @@ pub fn private_api_routes(cfg: &mut web::ServiceConfig) {
         web::scope(&CONFIG.api.private_path.as_ref().unwrap())
             .route("/auth/me", web::get().to(auth::me))
             .route("/auth/login", web::post().to(auth::login))
-            .route("/auth/logout", web::post().to(auth::logout))
+            .route("/auth/logout", web::post().to(auth::logout)),
     );
 }
 

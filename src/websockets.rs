@@ -55,8 +55,6 @@ pub struct WSMessage {
     pub message: String,
 }
 
-
-
 pub struct WebSocketServer {
     sessions: HashMap<ClientID, Recipient<WSMessage>>,
     channels: HashMap<Channel, HashSet<ClientID>>,
@@ -181,8 +179,6 @@ impl Handler<SendChannel> for WebSocketServer {
         }
     }
 }
-
-
 
 struct WebSocketSession {
     id: Option<ClientID>,

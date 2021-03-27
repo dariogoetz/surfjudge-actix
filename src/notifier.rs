@@ -1,16 +1,16 @@
 use crate::logging::LOG;
 use crate::websockets::SendChannel;
 
-use std::sync::{Arc, Mutex};
 use actix::Recipient;
 use anyhow::Result;
-use slog::{debug, warn};
-use std::sync::mpsc::{self, Sender};
-use std::thread;
-use zmq::{Context, PUB};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use slog::{debug, warn};
+use std::sync::mpsc::{self, Sender};
+use std::sync::{Arc, Mutex};
+use std::thread;
 use uuid::Uuid;
+use zmq::{Context, PUB};
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -57,7 +57,7 @@ impl Notify for WSNotifier {
     fn send(&self, msg: &NotifierMessage) -> Result<()> {
         let msg = SendChannel {
             channel: msg.channel.clone(),
-            message: msg.message.clone()
+            message: msg.message.clone(),
         };
         self.addr.do_send(msg)?;
         Ok(())
@@ -65,7 +65,7 @@ impl Notify for WSNotifier {
 }
 
 pub struct ZMQNotifier {
-    addr: Sender<NotifierMessage>
+    addr: Sender<NotifierMessage>,
 }
 
 impl ZMQNotifier {
@@ -88,9 +88,10 @@ impl ZMQNotifier {
                 }
             }
         });
-        Ok(Self { addr: server_sender })
+        Ok(Self {
+            addr: server_sender,
+        })
     }
-
 }
 
 impl Notify for ZMQNotifier {
@@ -109,8 +110,8 @@ impl ZMQReceiver {
     pub fn new(addr: &str, notifier: &Notifier) -> Result<Self> {
         let address = addr.to_string();
         let notifier = notifier.clone();
-        
-        Ok(ZMQReceiver {address, notifier})
+
+        Ok(ZMQReceiver { address, notifier })
     }
 
     pub fn start(&self) -> Result<()> {
@@ -120,11 +121,14 @@ impl ZMQReceiver {
         let context = zmq::Context::new();
         let subscriber = context.socket(zmq::SUB).unwrap();
         subscriber.set_subscribe(b"").unwrap();
-        subscriber.bind(&addr).expect(&format!("Could not bind address {} for ZMQ receiver", &addr));
-        
+        subscriber.bind(&addr).expect(&format!(
+            "Could not bind address {} for ZMQ receiver",
+            &addr
+        ));
+
         thread::spawn(move || {
             debug!(LOG, "Started ZMQ listener thread");
-        
+
             loop {
                 let msg = match subscriber.recv_msg(0) {
                     Ok(x) => x,
@@ -142,31 +146,27 @@ impl ZMQReceiver {
                 };
                 let notifier_msg: NotifierMessage = match serde_json::from_str(&msg) {
                     Ok(x) => x,
-                    Err(_err) => {
-                        match serde_json::from_str::<NotifierMessageOldStyle>(&msg) {
-                            Ok(x) => NotifierMessage {
-                                channel: x.channel,
-                                message: x.message,
-                                sent_by: Vec::new()
-                            },
-                            Err(_err) => {
-                                warn!(LOG, "Error parsing message to json: {}", msg);
-                                continue;
-                            }
+                    Err(_err) => match serde_json::from_str::<NotifierMessageOldStyle>(&msg) {
+                        Ok(x) => NotifierMessage {
+                            channel: x.channel,
+                            message: x.message,
+                            sent_by: Vec::new(),
+                        },
+                        Err(_err) => {
+                            warn!(LOG, "Error parsing message to json: {}", msg);
+                            continue;
                         }
-                    }
+                    },
                 };
                 debug!(LOG, "Received ZMQ Message '{}'", msg);
-                notifier.forward(notifier_msg)
-                    .unwrap_or_else(|_error| {
-                        warn!(LOG, "Could not forward zmq message '{}' to server", msg);
-                    });
+                notifier.forward(notifier_msg).unwrap_or_else(|_error| {
+                    warn!(LOG, "Could not forward zmq message '{}' to server", msg);
+                });
             }
         });
         Ok(())
     }
 }
-
 
 #[derive(Clone)]
 pub struct Notifier {
