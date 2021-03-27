@@ -131,7 +131,6 @@ impl ZMQReceiver {
                     }
                 };
                 debug!(LOG, "Received ZMQ Message '{:?}'", msg);
-                warn!(LOG, "crie");
                 notifier.send_channel(notifier_msg.channel, json!(notifier_msg.message))
                     .unwrap_or_else(|_error| {
                         warn!(LOG, "Could not forward zmq message '{}' to server", msg);
@@ -159,7 +158,6 @@ impl Notifier {
         self.notifiers.lock().unwrap().push(notifier);
         Ok(self)
     }
-
 
     pub fn send_channel(&self, channel: Channel, message: Value) -> Result<()> {
         let msg = NotifierMessage {
