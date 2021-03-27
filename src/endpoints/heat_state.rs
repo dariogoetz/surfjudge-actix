@@ -74,7 +74,7 @@ pub async fn start_heat(
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
 
-    info!(LOG, "Start heat {} by {:?}", heat_id, user);
+    info!(LOG, "Start heat {} by {}", heat_id, user);
     notifier
         .send(
             Channel::ActiveHeats,
@@ -99,7 +99,7 @@ pub async fn stop_heat(
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
 
-    info!(LOG, "Stop heat {} by {:?}", heat_id, user);
+    info!(LOG, "Stop heat {} by {}", heat_id, user);
     notifier
         .send(
             Channel::ActiveHeats,
@@ -124,7 +124,7 @@ pub async fn toggle_heat_pause(
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
 
-    info!(LOG, "Toggle pause for heat {} by {:?}", heat_id, user);
+    info!(LOG, "Toggle pause for heat {} by {}", heat_id, user);
     notifier
         .send(
             Channel::ActiveHeats,
@@ -149,7 +149,7 @@ pub async fn reset_heat_time(
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
 
-    info!(LOG, "Reset heat time for heat {} by {:?}", heat_id, user);
+    info!(LOG, "Reset heat time for heat {} by {}", heat_id, user);
     notifier
         .send(
             Channel::ActiveHeats,

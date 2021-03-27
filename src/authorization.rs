@@ -7,7 +7,7 @@ use futures::future::Future;
 use oso::{Oso, PolarClass};
 use serde::Serialize;
 use slog::{error, warn};
-use std::{pin::Pin, sync::Arc, sync::Mutex};
+use std::{fmt, pin::Pin, sync::Arc, sync::Mutex};
 
 pub struct OsoState {
     oso: Mutex<Oso>,
@@ -49,6 +49,12 @@ impl OsoState {
 
 #[derive(Serialize, Debug, Default, Clone)]
 pub struct AuthorizedUser(AuthenticatedUser);
+
+impl fmt::Display for AuthorizedUser {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0.username)
+    }
+}
 
 impl FromRequest for AuthorizedUser {
     type Config = ();
