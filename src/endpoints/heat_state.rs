@@ -71,7 +71,7 @@ pub async fn start_heat(
 
     info!(LOG, "Start heat {} by {:?}", heat_id, user);
     notifier
-        .send_channel(
+        .send(
             Channel::ActiveHeats,
             json!({
                 "heat_id": heat_id,
@@ -96,7 +96,7 @@ pub async fn stop_heat(
 
     info!(LOG, "Stop heat {} by {:?}", heat_id, user);
     notifier
-        .send_channel(
+        .send(
             Channel::ActiveHeats,
             json!({
                 "heat_id": heat_id,
@@ -121,7 +121,7 @@ pub async fn toggle_heat_pause(
 
     info!(LOG, "Toggle pause for heat {} by {:?}", heat_id, user);
     notifier
-        .send_channel(
+        .send(
             Channel::ActiveHeats,
             json!({
                 "heat_id": heat_id,
@@ -146,7 +146,7 @@ pub async fn reset_heat_time(
 
     info!(LOG, "Reset heat time for heat {} by {:?}", heat_id, user);
     notifier
-        .send_channel(
+        .send(
             Channel::ActiveHeats,
             json!({
                 "heat_id": heat_id,

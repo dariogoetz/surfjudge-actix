@@ -9,7 +9,8 @@ use std::sync::mpsc::{self, Sender};
 use std::thread;
 use zmq::{Context, PUB};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::Value;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -20,14 +21,25 @@ pub enum Channel {
     Participants,
 }
 
+// Message type sent to notifiers
+// sent_by contains all notifier-servers that have sent this message already
+// this prevents endless ping-pong between notifiers
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NotifierMessage {
+    channel: Channel,
+    message: String,
+    sent_by: Vec<Uuid>,
+}
+
+// Old style ZMQ message type without sent_by
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct NotifierMessageOldStyle {
     channel: Channel,
     message: String,
 }
 
 pub trait Notify {
-    fn send_channel(&self, msg: &NotifierMessage) -> Result<()>;
+    fn send(&self, msg: &NotifierMessage) -> Result<()>;
 }
 
 #[derive(Clone)]
@@ -42,7 +54,7 @@ impl WSNotifier {
 }
 
 impl Notify for WSNotifier {
-    fn send_channel(&self, msg: &NotifierMessage) -> Result<()> {
+    fn send(&self, msg: &NotifierMessage) -> Result<()> {
         let msg = SendChannel {
             channel: msg.channel.clone(),
             message: msg.message.clone()
@@ -65,8 +77,12 @@ impl ZMQNotifier {
         publisher.connect(addr)?;
 
         thread::spawn(move || {
+            debug!(LOG, "Started ZMQ sender thread");
+
             while let Ok(msg) = server_receiver.recv() {
-                match publisher.send(&serde_json::to_string(&msg).unwrap(), 0) {
+                let msg = serde_json::to_string(&msg).unwrap();
+                debug!(LOG, "Sending ZMQ message: {}", msg);
+                match publisher.send(&msg, 0) {
                     Err(e) => warn!(LOG, "Could not send zmq message: {:?}", e),
                     _ => (),
                 }
@@ -78,7 +94,7 @@ impl ZMQNotifier {
 }
 
 impl Notify for ZMQNotifier {
-    fn send_channel(&self, msg: &NotifierMessage) -> Result<()> {
+    fn send(&self, msg: &NotifierMessage) -> Result<()> {
         self.addr.send(msg.clone())?;
         Ok(())
     }
@@ -101,15 +117,16 @@ impl ZMQReceiver {
         let addr = self.address.clone();
         let notifier = self.notifier.clone();
 
+        let context = zmq::Context::new();
+        let subscriber = context.socket(zmq::SUB).unwrap();
+        subscriber.set_subscribe(b"").unwrap();
+        subscriber.bind(&addr).expect(&format!("Could not bind address {} for ZMQ receiver", &addr));
+        
         thread::spawn(move || {
-            let context = zmq::Context::new();
-            let sub = context.socket(zmq::SUB).unwrap();
-            sub.set_subscribe(b"").unwrap();
-            sub.bind(&addr).expect(&format!("Could not bind address {} for ZMQ receiver", &addr));
             debug!(LOG, "Started ZMQ listener thread");
         
             loop {
-                let msg = match sub.recv_msg(0) {
+                let msg = match subscriber.recv_msg(0) {
                     Ok(x) => x,
                     Err(_err) => {
                         warn!(LOG, "Error while reading zmq message");
@@ -126,12 +143,21 @@ impl ZMQReceiver {
                 let notifier_msg: NotifierMessage = match serde_json::from_str(&msg) {
                     Ok(x) => x,
                     Err(_err) => {
-                        warn!(LOG, "Error parsing message to json");
-                        continue;
+                        match serde_json::from_str::<NotifierMessageOldStyle>(&msg) {
+                            Ok(x) => NotifierMessage {
+                                channel: x.channel,
+                                message: x.message,
+                                sent_by: Vec::new()
+                            },
+                            Err(_err) => {
+                                warn!(LOG, "Error parsing message to json: {}", msg);
+                                continue;
+                            }
+                        }
                     }
                 };
-                debug!(LOG, "Received ZMQ Message '{:?}'", msg);
-                notifier.send_channel(notifier_msg.channel, json!(notifier_msg.message))
+                debug!(LOG, "Received ZMQ Message '{}'", msg);
+                notifier.forward(notifier_msg)
                     .unwrap_or_else(|_error| {
                         warn!(LOG, "Could not forward zmq message '{}' to server", msg);
                     });
@@ -145,12 +171,14 @@ impl ZMQReceiver {
 #[derive(Clone)]
 pub struct Notifier {
     notifiers: Arc<Mutex<Vec<Box<dyn Notify + Send>>>>,
+    id: Uuid,
 }
 
 impl Notifier {
     pub fn new() -> Result<Notifier> {
         Ok(Notifier {
             notifiers: Arc::new(Mutex::new(Vec::new())),
+            id: Uuid::new_v4(),
         })
     }
 
@@ -159,13 +187,26 @@ impl Notifier {
         Ok(self)
     }
 
-    pub fn send_channel(&self, channel: Channel, message: Value) -> Result<()> {
+    pub fn forward(&self, mut msg: NotifierMessage) -> Result<()> {
+        if msg.sent_by.iter().any(|id| *id == self.id) {
+            debug!(LOG, "Not forwarding message already sent before");
+        } else {
+            msg.sent_by.push(self.id.clone());
+            for notifier in self.notifiers.lock().unwrap().iter() {
+                notifier.send(&msg)?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn send(&self, channel: Channel, message: Value) -> Result<()> {
         let msg = NotifierMessage {
             channel,
             message: message.to_string(),
+            sent_by: vec![self.id.clone()],
         };
         for notifier in self.notifiers.lock().unwrap().iter() {
-            notifier.send_channel(&msg)?;
+            notifier.send(&msg)?;
         }
         Ok(())
     }
