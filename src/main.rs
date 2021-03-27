@@ -41,15 +41,25 @@ async fn main() -> Result<()> {
     let mut notifier = notifier::Notifier::new()?;
     let websocket_server = if let Some(address) = &CONFIG.notifications.websocket_server_address {
         info!(LOG, "Starting websocket server at {}", address);
+        
         let websocket_server = websockets::WebSocketServer::new().start();
+        
         let ws_notifier = notifier::WSNotifier::new(websocket_server.clone().recipient())?;
         notifier.register(Box::new(ws_notifier))?;
+        
         Some(websocket_server)
     } else { None };
-    if let Some(address) = &CONFIG.notifications.zmq_pub_address {
-        info!(LOG, "Connecting ZMQ publisher to port {:?}", address);
+    if let Some(address) = &CONFIG.notifications.zmq_sender_address {
+        info!(LOG, "Connecting ZMQ publisher at {}", address);
         let zmq_notifier = notifier::ZMQNotifier::new(&format!("tcp://{}", address))?;
         notifier.register(Box::new(zmq_notifier))?;
+    };
+
+
+    if let Some(port) = &CONFIG.notifications.zmq_receiver_port {
+        info!(LOG, "Listening for ZMQ messages on port {}", port);
+        let zmq_receiver = notifier::ZMQReceiver::new(&format!("tcp://*:{}", port), &notifier)?;
+        zmq_receiver.start()?;
     };
 
 

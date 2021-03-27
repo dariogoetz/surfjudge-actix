@@ -25,8 +25,8 @@ pub struct Auth {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Notifications {
-    pub zmq_pub_address: Option<String>,
-    pub zmq_sub_address: Option<String>,
+    pub zmq_sender_address: Option<String>,
+    pub zmq_receiver_port: Option<String>,
     pub websocket_server_address: Option<String>,
 }
 
