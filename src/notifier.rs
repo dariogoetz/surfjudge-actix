@@ -19,6 +19,8 @@ pub enum Channel {
     Results,
     Advancements,
     Participants,
+    Scores,
+    JudgingRequests,
 }
 
 // Message type sent to notifiers
