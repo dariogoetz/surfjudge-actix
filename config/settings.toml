@@ -2,10 +2,14 @@ debug = false
 server_address = "127.0.0.1:8081"
 template_dir = "templates"
 
-[ui_settings]
+[api]
 websocket_url = "wss://websocket.surfjudge.de"
-api_path = "/public"
 
 [database]
 url = "postgresql://postgres:surfjudge2000@localhost:5432/postgres"
 max_connections = 40
+
+[auth]
+rules_file = "config/auth_rules.polar"
+
+[notifications]

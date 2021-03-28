@@ -12,9 +12,22 @@ pub struct Database {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct UISettings {
+pub struct API {
     pub websocket_url: String,
-    pub api_path: String,
+    pub public_path: Option<String>,
+    pub private_path: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Auth {
+    pub rules_file: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Notifications {
+    pub zmq_sender_address: Option<String>,
+    pub zmq_receiver_port: Option<String>,
+    pub websocket_server_address: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -22,8 +35,10 @@ pub struct Settings {
     pub debug: String,
     pub server_address: String,
     pub database: Database,
-    pub ui_settings: UISettings,
+    pub api: API,
     pub template_dir: String,
+    pub auth: Auth,
+    pub notifications: Notifications,
 }
 
 pub static CONFIG: Lazy<Settings> = Lazy::new(|| {

@@ -11,3 +11,5 @@ pub mod surfer;
 pub mod tournament;
 
 pub mod pages;
+
+pub mod auth;
