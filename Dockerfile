@@ -1,5 +1,7 @@
 FROM rust:latest as builder
 
+RUN apt-get update && apt-get install -y libzmq3-dev
+
 RUN USER=root cargo new --bin surfjudge-actix
 WORKDIR ./surfjudge-actix
 
@@ -16,6 +18,8 @@ RUN cargo build --release
 
 FROM debian:buster-slim
 ARG APP=/usr/src/app
+
+RUN apt-get update && apt-get install -y libzmq3-dev
 
 ENV APP_USER=appuser
 RUN groupadd $APP_USER \
