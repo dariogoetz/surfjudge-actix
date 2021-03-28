@@ -7,7 +7,7 @@ websocket_url = "wss://websocket.surfjudge.de"
 
 [database]
 url = "postgresql://postgres:surfjudge2000@localhost:5432/postgres"
-max_connections = 40
+max_connections = 10
 
 [auth]
 rules_file = "config/auth_rules.polar"
