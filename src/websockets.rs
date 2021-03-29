@@ -41,7 +41,7 @@ impl fmt::Display for ClientID {
 
 // message to be received from websocket connections
 #[derive(Serialize, Deserialize, Debug)]
-pub struct WSActionMessage {
+pub struct WSClientRequestMessage {
     pub channel: Channel,
     pub action: String,
 }
@@ -180,6 +180,8 @@ impl Handler<SendChannel> for WebSocketServer {
     }
 }
 
+// actor representing individual websocket client sessions
+// communication with ws clients happens here
 struct WebSocketSession {
     id: Option<ClientID>,
     server_addr: Addr<WebSocketServer>,
@@ -244,7 +246,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketSession 
             }
             ws::Message::Pong(_msg) => (),
             ws::Message::Text(msg) => {
-                let msg: WSActionMessage = match serde_json::from_str(&msg) {
+                let msg: WSClientRequestMessage = match serde_json::from_str(&msg) {
                     Ok(msg) => msg,
                     Err(_err) => {
                         warn!(
