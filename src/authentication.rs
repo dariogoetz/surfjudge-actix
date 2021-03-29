@@ -16,6 +16,7 @@ use std::pin::Pin;
 #[derive(Serialize, Debug, Default, Clone, PolarClass)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticatedUser {
+    pub id: u32,
     pub username: String,
     pub permissions: Vec<PermissionType>,
 }
@@ -67,7 +68,7 @@ impl FromRequest for AuthenticatedUser {
                     identity.forget();
                 }
             } else {
-                warn!(LOG, "User not logged in!")
+                warn!(LOG, "User not logged in!");
             };
             Err(ErrorUnauthorized("unauthorized"))
         })
@@ -111,6 +112,7 @@ pub async fn authenticate_user(
         .collect();
 
     Some(AuthenticatedUser {
+        id: user.id as u32,
         username: username.to_string(),
         permissions: permissions,
     })

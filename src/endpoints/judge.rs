@@ -3,9 +3,9 @@ use crate::models::permission::PermissionType;
 use crate::models::user::User;
 use crate::models::judge::JudgingRequest;
 use crate::notifier::{Channel, Notifier};
+use crate::authorization::AuthorizedUser;
 
 use actix_web::{error, web, Result};
-use serde::Deserialize;
 use serde_json::json;
 
 pub async fn get_all(db: web::Data<Pool>) -> Result<web::Json<Vec<User>>> {
@@ -41,23 +41,22 @@ pub async fn get_requests(db: web::Data<Pool>,
 }
 
 
-#[derive(Debug, Deserialize)]
-pub struct JudgingRequestBody {
-    pub judge_id: u32,
-    pub expire_s: Option<u32>,
-}
 pub async fn add_request(
-    req: web::Json<JudgingRequestBody>,
     db: web::Data<Pool>,
     notifier: web::Data<Notifier>,
+    user: AuthorizedUser,
 ) -> Result<web::Json<&'static str>> {
-    let expire_s = req.expire_s.unwrap_or(20);
-    JudgingRequest::add(db.get_ref(), req.judge_id, expire_s)
+
+    if !user.0.is_judge() {
+        return Err(error::ErrorForbidden(format!("User '{}' not allowed to post judging requests", user.0.username)));
+    }
+
+    JudgingRequest::add(db.get_ref(), user.0.id, 20)
         .await
         .map_err(|e| {
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
-    
+
     notifier
         .send(
             Channel::JudgingRequests,

@@ -48,7 +48,7 @@ impl OsoState {
 }
 
 #[derive(Serialize, Debug, Default, Clone)]
-pub struct AuthorizedUser(AuthenticatedUser);
+pub struct AuthorizedUser(pub AuthenticatedUser);
 
 impl fmt::Display for AuthorizedUser {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
