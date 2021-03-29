@@ -1,6 +1,7 @@
 use crate::database::Pool;
-use crate::models::permission::Permission;
+use crate::models::permission::{Permission, PermissionType};
 
+use futures::future;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
@@ -55,6 +56,16 @@ impl User {
             return v;
         }
     }
+    async fn expand_vec(
+        db: &Pool,
+        v: impl std::iter::Iterator<Item = Self>,
+        expand: bool,
+    ) -> Vec<Self> {
+        match expand {
+            true => future::join_all(v.map(|r| r.expand_permissions(&db))).await,
+            false => v.collect(),
+        }
+    }
 
     pub async fn find_by_username(
         db: &Pool,
@@ -67,5 +78,27 @@ impl User {
             .await?
             .map(|r| Self::from(r));
         Ok(Self::expand_option(&db, res, expand_permissions).await)
+    }
+
+    pub async fn find_by_permission(
+        db: &Pool,
+        permission: PermissionType,
+        expand_permissions: bool,
+    ) -> anyhow::Result<Vec<Self>> {
+        let res = sqlx::query_as::<_, UserCore>(
+            r#"
+        SELECT users.*
+        FROM users 
+        JOIN permissions
+        ON users.id = permissions.user_id
+        WHERE permissions.permission = $1
+        "#,
+        )
+        .bind(permission)
+        .fetch_all(db)
+        .await?
+        .into_iter()
+        .map(|r| Self::from(r));
+        Ok(Self::expand_vec(&db, res, expand_permissions).await)
     }
 }

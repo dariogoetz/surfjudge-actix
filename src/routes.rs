@@ -1,7 +1,7 @@
 use crate::configuration::CONFIG;
 use crate::endpoints::{
-    auth, category, heat, heat_advancement, heat_state, lycra_color, pages, participation, result,
-    surfer, tournament,
+    auth, category, heat, heat_advancement, heat_state, judge, lycra_color, pages, participation,
+    result, surfer, tournament,
 };
 
 use actix_files as fs;
@@ -97,6 +97,7 @@ pub fn private_api_routes(cfg: &mut web::ServiceConfig) {
                 "/heats/{heat_id}/reset_heat_time",
                 web::post().to(heat_state::reset_heat_time),
             )
+            .route("/judges", web::get().to(judge::get_all)),
     );
 }
 

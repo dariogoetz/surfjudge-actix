@@ -1,8 +1,10 @@
 use crate::database::Pool;
+use crate::logging::LOG;
 use crate::models::heat::Heat;
 
 use actix_web::{error, web, Result};
 use serde::Deserialize;
+use slog::warn;
 
 #[derive(Debug, Deserialize)]
 pub struct HeatQuery {
@@ -17,7 +19,7 @@ pub async fn get_all(
         HeatQuery {
             category_id: Some(x),
         } => {
-            println!("Query params for heats are deprecated!");
+            warn!(LOG, "Query params for heats are deprecated!");
             Heat::find_by_category_id(db.get_ref(), x as u32, false).await
         }
         _ => Heat::find_all(db.get_ref(), true).await,

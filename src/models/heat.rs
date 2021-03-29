@@ -1,9 +1,8 @@
 use crate::database::Pool;
 use crate::models::participation::Participation; //{category::Category, participation::Participation};
 
-use futures::future;
-
 use chrono::NaiveDateTime;
+use futures::future;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Type};
 
