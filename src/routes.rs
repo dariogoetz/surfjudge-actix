@@ -97,7 +97,11 @@ pub fn private_api_routes(cfg: &mut web::ServiceConfig) {
                 "/heats/{heat_id}/reset_heat_time",
                 web::post().to(heat_state::reset_heat_time),
             )
-            .route("/judges", web::get().to(judge::get_all)),
+            .route("/judges", web::get().to(judge::get_all))
+            .route(
+                "/heats/{heat_id}/assigned_judges",
+                web::get().to(judge::get_assigned),
+            ),
     );
 }
 
