@@ -67,14 +67,14 @@ impl From<UserCore> for User {
 }
 
 impl User {
-    async fn expand_permissions(mut self, db: &Pool) -> Self {
+    async fn expand(mut self, db: &Pool) -> Self {
         self.permissions = Permission::find_by_user_id(&db, self.id).await.ok();
         self
     }
     async fn expand_option(db: &Pool, v: Option<Self>, expand: bool) -> Option<Self> {
         if expand {
             return match v {
-                Some(val) => Some(val.expand_permissions(&db).await),
+                Some(val) => Some(val.expand(&db).await),
                 None => None,
             };
         } else {
@@ -87,7 +87,7 @@ impl User {
         expand: bool,
     ) -> Vec<Self> {
         match expand {
-            true => future::join_all(v.map(|r| r.expand_permissions(&db))).await,
+            true => future::join_all(v.map(|r| r.expand(&db))).await,
             false => v.collect(),
         }
     }

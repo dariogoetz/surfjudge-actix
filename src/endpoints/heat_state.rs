@@ -66,7 +66,7 @@ pub async fn start_heat(
     db: web::Data<Pool>,
     notifier: web::Data<Notifier>,
     user: AuthorizedUser,
-) -> Result<&'static str> {
+) -> Result<web::Json<&'static str>> {
     HeatState::set_heat_started(&db, heat_id)
         .await
         .map_err(|e| {
@@ -84,7 +84,7 @@ pub async fn start_heat(
             }),
         )
         .unwrap();
-    Ok("Started heat!")
+    Ok(web::Json("Started heat!"))
 }
 
 pub async fn stop_heat(
@@ -92,7 +92,7 @@ pub async fn stop_heat(
     db: web::Data<Pool>,
     notifier: web::Data<Notifier>,
     user: AuthorizedUser,
-) -> Result<&'static str> {
+) -> Result<web::Json<&'static str>> {
     HeatState::set_heat_stopped(&db, heat_id)
         .await
         .map_err(|e| {
@@ -109,7 +109,7 @@ pub async fn stop_heat(
             }),
         )
         .unwrap();
-    Ok("Stopped heat!")
+    Ok(web::Json("Stopped heat!"))
 }
 
 pub async fn toggle_heat_pause(
@@ -117,7 +117,7 @@ pub async fn toggle_heat_pause(
     db: web::Data<Pool>,
     notifier: web::Data<Notifier>,
     user: AuthorizedUser,
-) -> Result<&'static str> {
+) -> Result<web::Json<&'static str>> {
     HeatState::toggle_heat_pause(&db, heat_id)
         .await
         .map_err(|e| {
@@ -134,7 +134,7 @@ pub async fn toggle_heat_pause(
             }),
         )
         .unwrap();
-    Ok("Toggled heat pause!")
+    Ok(web::Json("Toggled heat pause!"))
 }
 
 pub async fn reset_heat_time(
@@ -142,7 +142,7 @@ pub async fn reset_heat_time(
     db: web::Data<Pool>,
     notifier: web::Data<Notifier>,
     user: AuthorizedUser,
-) -> Result<&'static str> {
+) -> Result<web::Json<&'static str>> {
     HeatState::reset_heat_time(&db, heat_id)
         .await
         .map_err(|e| {
@@ -159,5 +159,5 @@ pub async fn reset_heat_time(
             }),
         )
         .unwrap();
-    Ok("Reset heat time!")
+    Ok(web::Json("Reset heat time!"))
 }
