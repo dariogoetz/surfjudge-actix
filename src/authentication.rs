@@ -84,7 +84,7 @@ pub async fn authenticate_user(
     password: &str,
 ) -> Option<AuthenticatedUser> {
     // find user in database
-    let user = User::find_by_username(db, username, true)
+    let user = User::find_credentials_by_username(db, username)
         .await
         .ok()
         .unwrap_or(None);

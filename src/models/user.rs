@@ -6,11 +6,37 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 // this struct will be used to represent database record
+#[derive(Debug, FromRow)]
+pub struct UserCredentialsCore {
+    pub id: i32,
+    pub username: String,
+    pub password_hash: String,
+}
+
+// this struct will be used to represent database record
+#[derive(Debug, FromRow)]
+pub struct UserCredentials {
+    pub id: i32,
+    pub username: String,
+    pub password_hash: String,
+    pub permissions: Option<Vec<Permission>>,
+}
+
+impl From<UserCredentialsCore> for UserCredentials {
+    fn from(user: UserCredentialsCore) -> UserCredentials {
+        UserCredentials {
+            id: user.id,
+            username: user.username,
+            password_hash: user.password_hash,
+            permissions: None,
+        }
+    }
+}
+// this struct will be used to represent database record
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct UserCore {
     pub id: i32,
     pub username: String,
-    pub password_hash: String,
     pub first_name: String,
     pub last_name: String,
     pub additional_info: Option<String>,
@@ -20,19 +46,18 @@ pub struct UserCore {
 pub struct User {
     pub id: i32,
     pub username: String,
-    pub password_hash: String,
     pub first_name: String,
     pub last_name: String,
     pub additional_info: Option<String>,
     pub permissions: Option<Vec<Permission>>,
 }
 
+
 impl From<UserCore> for User {
     fn from(user: UserCore) -> User {
         User {
             id: user.id,
             username: user.username,
-            password_hash: user.password_hash,
             first_name: user.first_name,
             last_name: user.last_name,
             additional_info: user.additional_info,
@@ -66,6 +91,22 @@ impl User {
             false => v.collect(),
         }
     }
+    
+    pub async fn find_credentials_by_username(
+        db: &Pool,
+        username: &str,
+    ) -> anyhow::Result<Option<UserCredentials>> {
+        let mut res = sqlx::query_as::<_, UserCredentialsCore>(r#"SELECT * FROM users WHERE username = $1"#)
+            .bind(username)
+            .fetch_optional(db)
+            .await?
+            .map(|r| UserCredentials::from(r));
+        if let Some(res) = &mut res {
+            res.permissions = Permission::find_by_user_id(&db, res.id).await.ok();
+        }
+
+        Ok(res)
+    }
 
     pub async fn find_by_username(
         db: &Pool,
@@ -95,6 +136,34 @@ impl User {
         "#,
         )
         .bind(permission)
+        .fetch_all(db)
+        .await?
+        .into_iter()
+        .map(|r| Self::from(r));
+        Ok(Self::expand_vec(&db, res, expand_permissions).await)
+    }
+
+    pub async fn find_by_judge_assignments(
+        db: &Pool,
+        heat_id: u32,
+        expand_permissions: bool,
+    ) -> anyhow::Result<Vec<Self>> {
+        let res = sqlx::query_as::<_, UserCore>(
+            r#"
+        SELECT u.*
+        FROM users u
+        JOIN permissions p
+        ON u.id = p.user_id
+          JOIN judge_assignments ja
+          ON u.id = ja.judge_id
+            JOIN heats h
+            ON h.id = ja.heat_id
+        WHERE p.permission = $1
+          AND h.id = $2
+        "#,
+        )
+        .bind(PermissionType::Judge)
+        .bind(heat_id)
         .fetch_all(db)
         .await?
         .into_iter()
