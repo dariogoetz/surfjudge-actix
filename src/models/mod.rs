@@ -9,3 +9,4 @@ pub mod result;
 pub mod surfer;
 pub mod tournament;
 pub mod user;
+pub mod judge;

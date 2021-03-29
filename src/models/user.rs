@@ -108,13 +108,13 @@ impl User {
         Ok(res)
     }
 
-    pub async fn find_by_username(
+    pub async fn find_by_id(
         db: &Pool,
-        username: &str,
+        id: u32,
         expand_permissions: bool,
     ) -> anyhow::Result<Option<Self>> {
-        let res = sqlx::query_as::<_, UserCore>(r#"SELECT * FROM users WHERE username = $1"#)
-            .bind(username)
+        let res = sqlx::query_as::<_, UserCore>(r#"SELECT * FROM users WHERE id = $1"#)
+            .bind(id)
             .fetch_optional(db)
             .await?
             .map(|r| Self::from(r));
