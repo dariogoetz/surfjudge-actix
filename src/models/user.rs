@@ -130,7 +130,7 @@ impl User {
             r#"
         SELECT users.*
         FROM users 
-        JOIN permissions
+        INNER JOIN permissions
         ON users.id = permissions.user_id
         WHERE permissions.permission = $1
         "#,
@@ -152,11 +152,11 @@ impl User {
             r#"
         SELECT u.*
         FROM users u
-        JOIN permissions p
+        INNER JOIN permissions p
         ON u.id = p.user_id
-          JOIN judge_assignments ja
+          INNER JOIN judge_assignments ja
           ON u.id = ja.judge_id
-            JOIN heats h
+            INNER JOIN heats h
             ON h.id = ja.heat_id
         WHERE p.permission = $1
           AND h.id = $2

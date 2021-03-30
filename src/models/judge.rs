@@ -70,7 +70,6 @@ INSERT INTO judging_requests (judge_id, expire_date)
 VALUES ($1, NOW() + interval '$2' second)
 ON CONFLICT (judge_id) DO UPDATE
 SET expire_date = EXCLUDED.expire_date
-
 RETURNING judge_id;
         "#,
         )

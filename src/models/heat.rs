@@ -165,11 +165,12 @@ impl Heat {
         Self::find_vec_bind(
             &db,
             r#"
-SELECT h.*
-FROM heats h
-INNER JOIN heat_state s
-ON s.heat_id = h.id
-WHERE s.state in ('active', 'paused') AND h.category_id = $1"#,
+                SELECT h.*
+                FROM heats h
+                INNER JOIN heat_state s
+                ON s.heat_id = h.id
+                WHERE s.state in ('active', 'paused') AND h.category_id = $1
+            "#,
             category_id,
             expand,
         )
@@ -184,14 +185,38 @@ WHERE s.state in ('active', 'paused') AND h.category_id = $1"#,
         Self::find_vec_bind(
             &db,
             r#"
-SELECT h.*
-FROM heats h
-INNER JOIN categories c
-ON h.category_id = c.id
-  INNER JOIN heat_state s
-  ON s.heat_id = h.id
-  WHERE s.state in ('active', 'paused') AND c.tournament_id = $1"#,
+                SELECT h.*
+                FROM heats h
+                INNER JOIN categories c
+                ON h.category_id = c.id
+                  INNER JOIN heat_state s
+                  ON s.heat_id = h.id
+                WHERE s.state in ('active', 'paused') AND c.tournament_id = $1
+            "#,
             tournament_id,
+            expand,
+        )
+        .await
+    }
+
+    pub async fn find_active_heats_by_judge_id(
+        db: &Pool,
+        judge_id: u32,
+        expand: bool,
+    ) -> anyhow::Result<Vec<Self>> {
+        Self::find_vec_bind(
+            &db,
+            r#"
+                SELECT h.*
+                FROM heats h
+                INNER JOIN heat_state s
+                ON s.heat_id = h.id
+                  INNER JOIN judge_assignments ja
+                  ON h.id = ja.heat_id
+                WHERE s.state in ('active', 'paused')
+                AND ja.judge_id = $1
+            "#,
+            judge_id,
             expand,
         )
         .await
@@ -201,12 +226,12 @@ ON h.category_id = c.id
         Self::find_vec(
             &db,
             r#"
-SELECT h.*
-FROM heats h
-INNER JOIN heat_state s
-ON s.heat_id = h.id
-WHERE s.state in ('active', 'paused')
-"#,
+                SELECT h.*
+                FROM heats h
+                INNER JOIN heat_state s
+                ON s.heat_id = h.id
+                WHERE s.state in ('active', 'paused')
+            "#,
             expand,
         )
         .await

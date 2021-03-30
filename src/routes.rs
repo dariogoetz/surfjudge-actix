@@ -100,7 +100,11 @@ pub fn private_api_routes(cfg: &mut web::ServiceConfig) {
             .route("/judges", web::get().to(judge::get_all))
             .route(
                 "/heats/{heat_id}/assigned_judges",
-                web::get().to(judge::get_assigned),
+                web::get().to(judge::get_assigned_judges_for_heat),
+            )
+            .route(
+                "/active_judge_assignments",
+                web::get().to(judge::get_assigned_active_heats_for_judge),
             )
             .route(
                 "/judging_requests",
