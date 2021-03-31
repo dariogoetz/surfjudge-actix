@@ -15,7 +15,9 @@ pub struct Database {
 pub struct API {
     pub websocket_url: String,
     pub public_path: Option<String>,
-    pub private_path: Option<String>,
+    pub auth_path: Option<String>,
+    pub judging_path: Option<String>,
+    pub admin_path: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

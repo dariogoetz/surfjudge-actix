@@ -84,17 +84,6 @@ async fn main() -> Result<()> {
             .wrap(Logger::default())
             .route("/config", web::get().to(endpoints::config::get_ui_config));
 
-        let app = if let Some(_) = &CONFIG.api.public_path {
-            app.configure(routes::public_api_routes)
-        } else {
-            app
-        };
-
-        let app = if let Some(_) = &CONFIG.api.private_path {
-            app.configure(routes::private_api_routes)
-        } else {
-            app
-        };
 
         let app = if let Some(address) = &CONFIG.notifications.websocket_server_address {
             app.data(websocket_server.clone().unwrap())
@@ -102,18 +91,18 @@ async fn main() -> Result<()> {
         } else {
             app
         };
-
-        // page routes need to come last due to the "" scope
-        app.configure(routes::static_routes)
-            .configure(routes::page_routes)
+        app.configure(routes::configure_apis)
     })
     .bind(&CONFIG.server_address)?;
 
     if let Some(address) = &CONFIG.api.public_path {
-        info!(LOG, "Serving public API on {:?}", address);
+        info!(LOG, "Serving public API at {:?}", address);
     }
-    if let Some(address) = &CONFIG.api.private_path {
-        info!(LOG, "Serving private API on {:?}", address);
+    if let Some(address) = &CONFIG.api.admin_path {
+        info!(LOG, "Serving admin API at {:?}", address);
+    }
+    if let Some(address) = &CONFIG.api.judging_path {
+        info!(LOG, "Serving judging API at {:?}", address);
     }
     server.run().await?;
 

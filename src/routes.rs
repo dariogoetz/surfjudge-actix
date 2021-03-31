@@ -7,6 +7,30 @@ use crate::endpoints::{
 use actix_files as fs;
 use actix_web::web;
 
+
+pub fn configure_apis(cfg: &mut web::ServiceConfig){
+    if CONFIG.api.public_path.is_some() {
+        public_api_routes(cfg);
+    };
+    let mut require_auth = false;
+    if CONFIG.api.admin_path.is_some() {
+        admin_api_routes(cfg);
+        require_auth = true;
+    };
+    if CONFIG.api.judging_path.is_some() {
+        judging_api_routes(cfg);
+        require_auth = true;
+    };
+    if require_auth {
+        auth_api_routes(cfg);
+    };
+
+    static_routes(cfg);
+    // page routes need to come last due to the "" scope
+
+    page_routes(cfg);
+}
+
 pub fn public_api_routes(cfg: &mut web::ServiceConfig) {
     // public rest API endpoints
     cfg.service(
@@ -74,13 +98,19 @@ pub fn public_api_routes(cfg: &mut web::ServiceConfig) {
     );
 }
 
-pub fn private_api_routes(cfg: &mut web::ServiceConfig) {
+pub fn auth_api_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope(&CONFIG.api.auth_path.as_ref().unwrap())
+            .route("/me", web::get().to(auth::me))
+            .route("/login", web::post().to(auth::login))
+            .route("/logout", web::post().to(auth::logout))
+    );
+}
+
+pub fn admin_api_routes(cfg: &mut web::ServiceConfig) {
     // public rest API endpoints
     cfg.service(
-        web::scope(&CONFIG.api.private_path.as_ref().unwrap())
-            .route("/auth/me", web::get().to(auth::me))
-            .route("/auth/login", web::post().to(auth::login))
-            .route("/auth/logout", web::post().to(auth::logout))
+        web::scope(&CONFIG.api.admin_path.as_ref().unwrap())
             .route(
                 "/heats/{heat_id}/start",
                 web::post().to(heat_state::start_heat),
@@ -103,10 +133,6 @@ pub fn private_api_routes(cfg: &mut web::ServiceConfig) {
                 web::get().to(judge::get_assigned_judges_for_heat),
             )
             .route(
-                "/active_judge_assignments",
-                web::get().to(judge::get_assigned_active_heats_for_judge),
-            )
-            .route(
                 "/judging_requests",
                 web::get().to(judge::get_requests),
             )
@@ -114,6 +140,16 @@ pub fn private_api_routes(cfg: &mut web::ServiceConfig) {
                 "/judging_requests",
                 web::post().to(judge::add_request),
             ),
+    );
+}
+
+pub fn judging_api_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope(&CONFIG.api.judging_path.as_ref().unwrap())
+            .route(
+                "/active_judge_assignments",
+                web::get().to(judge::get_assigned_active_heats_for_judge),
+            )
     );
 }
 

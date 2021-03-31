@@ -9,7 +9,7 @@ use crate::authorization::AuthorizedUser;
 use actix_web::{error, web, Result};
 use serde_json::json;
 
-pub async fn get_all(db: web::Data<Pool>) -> Result<web::Json<Vec<User>>> {
+pub async fn get_all(db: web::Data<Pool>, _: AuthorizedUser) -> Result<web::Json<Vec<User>>> {
     let result = User::find_by_permission(db.get_ref(), PermissionType::Judge, false)
         .await
         .map_err(|e| {
@@ -21,6 +21,7 @@ pub async fn get_all(db: web::Data<Pool>) -> Result<web::Json<Vec<User>>> {
 pub async fn get_assigned_judges_for_heat(
     db: web::Data<Pool>,
     web::Path(heat_id): web::Path<u32>,
+    _: AuthorizedUser,
 ) -> Result<web::Json<Vec<User>>> {
     let result = User::find_by_judge_assignments(db.get_ref(), heat_id, false)
         .await
@@ -46,8 +47,7 @@ pub async fn get_assigned_active_heats_for_judge(
 }
 
 
-pub async fn get_requests(db: web::Data<Pool>,
-) -> Result<web::Json<Vec<JudgingRequest>>> {
+pub async fn get_requests(db: web::Data<Pool>, _: AuthorizedUser) -> Result<web::Json<Vec<JudgingRequest>>> {
     let result = JudgingRequest::find_all(db.get_ref(), true)
         .await
         .map_err(|e| {

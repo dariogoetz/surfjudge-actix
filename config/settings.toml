@@ -4,6 +4,10 @@ template_dir = "templates"
 
 [api]
 websocket_url = "wss://websocket.surfjudge.de"
+public_path = "/public"
+auth_path = "/auth"
+judging_path = "/judging"
+admin_path = "/admin"
 
 [database]
 url = "postgresql://postgres:surfjudge2000@localhost:5432/postgres"
