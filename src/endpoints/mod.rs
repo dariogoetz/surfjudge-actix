@@ -10,6 +10,7 @@ pub mod participation;
 pub mod result;
 pub mod surfer;
 pub mod tournament;
+pub mod score;
 
 pub mod pages;
 

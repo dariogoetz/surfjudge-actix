@@ -10,3 +10,4 @@ pub mod surfer;
 pub mod tournament;
 pub mod user;
 pub mod judge;
+pub mod score;

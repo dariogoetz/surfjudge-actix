@@ -1,7 +1,7 @@
 use crate::configuration::CONFIG;
 use crate::endpoints::{
     auth, category, heat, heat_advancement, heat_state, judge, lycra_color, pages, participation,
-    result, surfer, tournament,
+    result, surfer, tournament, score
 };
 
 use actix_files as fs;
@@ -149,6 +149,14 @@ pub fn judging_api_routes(cfg: &mut web::ServiceConfig) {
             .route(
                 "/active_judge_assignments",
                 web::get().to(judge::get_assigned_active_heats_for_judge),
+            )
+            .route(
+                "/heats/{heat_id}/judges/{judge_id}/scores",
+                web::get().to(score::get_by_heat_id_and_judge_id)
+            )
+            .route(
+                "/heats/{heat_id}/scores",
+                web::get().to(score::get_by_heat_id)
             )
     );
 }
