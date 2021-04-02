@@ -3,7 +3,7 @@ use crate::database::Pool;
 use crate::logging::LOG;
 
 use actix_identity::Identity;
-use actix_web::{web, Result};
+use actix_web::{web, Result, error::ErrorUnauthorized};
 use serde::{Deserialize, Serialize};
 use slog::info;
 
@@ -38,6 +38,8 @@ pub async fn login(
         info!(LOG, "Login user: {:?}", user);
         identity.remember(login.username.clone());
         sessions.insert(login.username.clone(), user.clone());
+    } else {
+        return Err(ErrorUnauthorized("unauthorized"))
     }
 
     Ok(web::Json(user))
