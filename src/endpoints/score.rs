@@ -1,8 +1,10 @@
 use crate::database::Pool;
 use crate::models::score::Score;
 use crate::authorization::AuthorizedUser;
+use crate::notifier::{Channel, Notifier};
 
 use actix_web::{error, web, Result};
+use serde_json::json;
 
 pub async fn get_by_heat_id_and_judge_id(
     web::Path((heat_id, judge_id)): web::Path<(u32, u32)>,
@@ -27,5 +29,32 @@ pub async fn get_by_heat_id(
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
     })?;
 
+    Ok(web::Json(result))
+}
+
+pub async fn put(
+    web::Json(score): web::Json<Score>,
+    db: web::Data<Pool>,
+    notifier: web::Data<Notifier>,
+    user: AuthorizedUser,
+) -> Result<web::Json<Option<Score>>> {
+    // compare given judge_id with session
+    if (user.0.id != score.judge_id as u32) && (!user.0.is_admin()) {
+        return Err(error::ErrorForbidden(format!("Judge '{}' not allowed to add score for judge '{}' ", user.0.id, score.judge_id)));
+    }
+
+    let result = Score::add(db.get_ref(), &score)
+        .await.map_err(|e| {
+            error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+        })?;
+    notifier
+        .send(
+            Channel::Scores,
+            json!({
+                "heat_id": score.heat_id,
+                "msg": "changed"
+            }),
+        )
+        .unwrap();
     Ok(web::Json(result))
 }

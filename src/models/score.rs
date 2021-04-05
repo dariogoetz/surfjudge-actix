@@ -45,4 +45,33 @@ impl Score {
             .await?;
         Ok(res)
     }
+
+    pub async fn add(db: &Pool, score: &Score) -> anyhow::Result<Option<Score>> {
+
+        let query = r#"
+        INSERT INTO scores (heat_id, judge_id, surfer_id, wave, score, missed, interference)
+        (SELECT ja.heat_id, ja.judge_id, p.surfer_id, $4, $5, $6, $7
+        FROM judge_assignments ja    -- only scores by assigned judges
+        INNER JOIN participations p  -- only scores for participating surfers
+        ON ja.heat_id = p.heat_id
+        WHERE ja.heat_id = $1 AND ja.judge_id = $2 AND p.surfer_id = $3)
+        ON CONFLICT (heat_id, surfer_id, judge_id, wave) DO UPDATE
+        SET
+          score = EXCLUDED.score,
+          missed = EXCLUDED.missed,
+          interference = EXCLUDED.interference
+        RETURNING *
+        "#;
+        let res = sqlx::query_as::<_, Score>(query)
+            .bind(score.heat_id)
+            .bind(score.judge_id)
+            .bind(score.surfer_id)
+            .bind(score.wave)
+            .bind(score.score)
+            .bind(score.missed)
+            .bind(score.interference)
+            .fetch_optional(db)
+            .await?;
+        Ok(res)
+    }
 }

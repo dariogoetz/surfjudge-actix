@@ -135,10 +135,6 @@ pub fn admin_api_routes(cfg: &mut web::ServiceConfig) {
             .route(
                 "/judging_requests",
                 web::get().to(judge::get_requests),
-            )
-            .route(
-                "/judging_requests",
-                web::post().to(judge::add_request),
             ),
     );
 }
@@ -157,6 +153,11 @@ pub fn judging_api_routes(cfg: &mut web::ServiceConfig) {
             .route(
                 "/heats/{heat_id}/scores",
                 web::get().to(score::get_by_heat_id)
+            )
+            .route("/scores", web::put().to(score::put))
+            .route(
+                "/judging_requests",
+                web::post().to(judge::add_request),
             )
     );
 }
