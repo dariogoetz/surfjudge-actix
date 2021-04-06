@@ -11,9 +11,10 @@ pub async fn get_all(db: web::Data<Pool>) -> Result<web::Json<Vec<LycraColor>>> 
 }
 
 pub async fn get_by_id(
-    web::Path(lycra_color_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
 ) -> Result<web::Json<Option<LycraColor>>> {
+    let lycra_color_id = path.into_inner();
     let result = LycraColor::find_by_id(db.get_ref(), lycra_color_id)
         .await
         .map_err(|e| {

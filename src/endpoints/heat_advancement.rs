@@ -39,9 +39,10 @@ pub async fn get_all(
     Ok(web::Json(result))
 }
 pub async fn get_by_category_id(
-    web::Path(category_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
 ) -> Result<web::Json<Vec<HeatAdvancement>>> {
+    let category_id = path.into_inner();
     let result = HeatAdvancement::find_by_category_id(db.get_ref(), category_id, true)
         .await
         .map_err(|e| {

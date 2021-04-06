@@ -13,9 +13,10 @@ pub async fn get_all(db: web::Data<Pool>) -> Result<web::Json<Vec<Participation>
 }
 
 pub async fn get_by_heat_id(
-    web::Path(heat_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
 ) -> Result<web::Json<Vec<Participation>>> {
+    let heat_id = path.into_inner();
     let participation = Participation::find_by_heat_id(db.get_ref(), heat_id, true)
         .await
         .map_err(|e| {
@@ -25,9 +26,10 @@ pub async fn get_by_heat_id(
 }
 
 pub async fn get_by_category_id(
-    web::Path(category_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
 ) -> Result<web::Json<Vec<Participation>>> {
+    let category_id = path.into_inner();
     let participation = Participation::find_by_category_id(db.get_ref(), category_id, true)
         .await
         .map_err(|e| {

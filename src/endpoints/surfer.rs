@@ -11,9 +11,10 @@ pub async fn get_all(db: web::Data<Pool>) -> Result<web::Json<Vec<Surfer>>> {
 }
 
 pub async fn get_by_id(
-    web::Path(surfer_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
 ) -> Result<web::Json<Option<Surfer>>> {
+    let surfer_id = path.into_inner();
     let result = Surfer::find_by_id(db.get_ref(), surfer_id)
         .await
         .map_err(|e| {

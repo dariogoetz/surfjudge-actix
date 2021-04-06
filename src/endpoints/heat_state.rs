@@ -20,9 +20,10 @@ pub struct ResultHeatState {
 }
 
 pub async fn get_by_heat_id(
-    web::Path(heat_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
 ) -> Result<web::Json<ResultHeatState>> {
+    let heat_id = path.into_inner();
     let result = HeatState::find_by_heat_id(db.get_ref(), heat_id)
         .await
         .map_err(|e| {
@@ -62,11 +63,12 @@ pub async fn get_by_heat_id(
 }
 
 pub async fn start_heat(
-    web::Path(heat_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
     notifier: web::Data<Notifier>,
     user: AuthorizedUser,
 ) -> Result<web::Json<&'static str>> {
+    let heat_id = path.into_inner();
     HeatState::set_heat_started(&db, heat_id)
         .await
         .map_err(|e| {
@@ -88,11 +90,12 @@ pub async fn start_heat(
 }
 
 pub async fn stop_heat(
-    web::Path(heat_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
     notifier: web::Data<Notifier>,
     user: AuthorizedUser,
 ) -> Result<web::Json<&'static str>> {
+    let heat_id = path.into_inner();
     HeatState::set_heat_stopped(&db, heat_id)
         .await
         .map_err(|e| {
@@ -113,11 +116,12 @@ pub async fn stop_heat(
 }
 
 pub async fn toggle_heat_pause(
-    web::Path(heat_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
     notifier: web::Data<Notifier>,
     user: AuthorizedUser,
 ) -> Result<web::Json<&'static str>> {
+    let heat_id = path.into_inner();
     HeatState::toggle_heat_pause(&db, heat_id)
         .await
         .map_err(|e| {
@@ -138,11 +142,12 @@ pub async fn toggle_heat_pause(
 }
 
 pub async fn reset_heat_time(
-    web::Path(heat_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
     notifier: web::Data<Notifier>,
     user: AuthorizedUser,
 ) -> Result<web::Json<&'static str>> {
+    let heat_id = path.into_inner();
     HeatState::reset_heat_time(&db, heat_id)
         .await
         .map_err(|e| {

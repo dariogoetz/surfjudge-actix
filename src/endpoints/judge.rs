@@ -20,9 +20,10 @@ pub async fn get_all(db: web::Data<Pool>, _: AuthorizedUser) -> Result<web::Json
 
 pub async fn get_assigned_judges_for_heat(
     db: web::Data<Pool>,
-    web::Path(heat_id): web::Path<u32>,
+    path: web::Path<u32>,
     _: AuthorizedUser,
 ) -> Result<web::Json<Vec<User>>> {
+    let heat_id = path.into_inner();
     let result = User::find_by_judge_assignments(db.get_ref(), heat_id, false)
         .await
         .map_err(|e| {

@@ -3,7 +3,7 @@ use crate::models::user::User;
 
 use futures::future;
 use serde::{Deserialize, Serialize};
-use sqlx::{Done, FromRow};
+use sqlx::FromRow;
 use chrono::NaiveDateTime;
 
 // this struct represents a judge database record

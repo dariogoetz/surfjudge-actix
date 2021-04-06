@@ -31,9 +31,10 @@ pub async fn get_all(
 }
 
 pub async fn get_by_id(
-    web::Path(heat_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
 ) -> Result<web::Json<Option<Heat>>> {
+    let heat_id = path.into_inner();
     let result = Heat::find_by_id(db.get_ref(), heat_id, false)
         .await
         .map_err(|e| {
@@ -43,9 +44,10 @@ pub async fn get_by_id(
 }
 
 pub async fn get_by_category_id(
-    web::Path(category_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
 ) -> Result<web::Json<Vec<Heat>>> {
+    let category_id = path.into_inner();
     let result = Heat::find_by_category_id(db.get_ref(), category_id, false)
         .await
         .map_err(|e| {
@@ -55,9 +57,10 @@ pub async fn get_by_category_id(
 }
 
 pub async fn get_active_heats_by_category_id(
-    web::Path(category_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
 ) -> Result<web::Json<Vec<Heat>>> {
+    let category_id = path.into_inner();
     let result = Heat::find_active_heats_by_category_id(db.get_ref(), category_id, false)
         .await
         .map_err(|e| {
@@ -67,9 +70,10 @@ pub async fn get_active_heats_by_category_id(
 }
 
 pub async fn get_active_heats_by_tournament_id(
-    web::Path(tournament_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
 ) -> Result<web::Json<Vec<Heat>>> {
+    let tournament_id = path.into_inner();
     let result = Heat::find_active_heats_by_tournament_id(db.get_ref(), tournament_id, false)
         .await
         .map_err(|e| {

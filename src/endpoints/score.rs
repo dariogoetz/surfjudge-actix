@@ -7,10 +7,11 @@ use actix_web::{error, web, Result};
 use serde_json::json;
 
 pub async fn get_by_heat_id_and_judge_id(
-    web::Path((heat_id, judge_id)): web::Path<(u32, u32)>,
+    path: web::Path<(u32, u32)>,
     db: web::Data<Pool>,
     _user: AuthorizedUser,
 ) -> Result<web::Json<Vec<Score>>> {
+    let (heat_id, judge_id) = path.into_inner();
     let result = Score::find_by_heat_and_judge(db.get_ref(), heat_id, judge_id)
         .await.map_err(|e| {
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
@@ -20,10 +21,11 @@ pub async fn get_by_heat_id_and_judge_id(
 }
 
 pub async fn get_by_heat_id(
-    web::Path(heat_id): web::Path<u32>,
+    path: web::Path<u32>,
     db: web::Data<Pool>,
     _user: AuthorizedUser,
 ) -> Result<web::Json<Vec<Score>>> {
+    let heat_id = path.into_inner();
     let result = Score::find_by_heat(db.get_ref(), heat_id)
         .await.map_err(|e| {
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
