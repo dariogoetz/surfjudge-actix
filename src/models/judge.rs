@@ -1,10 +1,10 @@
 use crate::database::Pool;
 use crate::models::user::User;
 
+use chrono::NaiveDateTime;
 use futures::future;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use chrono::NaiveDateTime;
 
 // this struct represents a judge database record
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -29,7 +29,6 @@ impl From<JudgingRequestCore> for JudgingRequest {
         }
     }
 }
-
 
 impl JudgingRequest {
     async fn expand(mut self, db: &Pool) -> Self {
@@ -79,5 +78,4 @@ RETURNING judge_id;
         .await?;
         Ok(res.rows_affected() > 0)
     }
-
 }

@@ -14,6 +14,14 @@ pub struct Score {
     pub missed: bool,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct DeleteScore {
+    pub surfer_id: i32,
+    pub judge_id: i32,
+    pub heat_id: i32,
+    pub wave: i32,
+}
+
 impl Score {
     pub async fn find_by_heat(db: &Pool, heat_id: u32) -> anyhow::Result<Vec<Self>> {
         let query = r#"
@@ -29,7 +37,11 @@ impl Score {
         Ok(res)
     }
 
-    pub async fn find_by_heat_and_judge(db: &Pool, heat_id: u32, judge_id: u32) -> anyhow::Result<Vec<Self>> {
+    pub async fn find_by_heat_and_judge(
+        db: &Pool,
+        heat_id: u32,
+        judge_id: u32,
+    ) -> anyhow::Result<Vec<Self>> {
         let query = r#"
             SELECT * FROM scores s
             INNER JOIN heats h
@@ -47,7 +59,6 @@ impl Score {
     }
 
     pub async fn add(db: &Pool, score: &Score) -> anyhow::Result<Option<Score>> {
-
         let query = r#"
         INSERT INTO scores (heat_id, judge_id, surfer_id, wave, score, missed, interference)
         (SELECT ja.heat_id, ja.judge_id, p.surfer_id, $4, $5, $6, $7
@@ -70,6 +81,22 @@ impl Score {
             .bind(score.score)
             .bind(score.missed)
             .bind(score.interference)
+            .fetch_optional(db)
+            .await?;
+        Ok(res)
+    }
+
+    pub async fn delete(db: &Pool, score: &DeleteScore) -> anyhow::Result<Option<Score>> {
+        let query = r#"
+        DELETE FROM scores s
+        WHERE s.heat_id = $1 AND s.judge_id = $2 AND s.surfer_id = $3 AND s.wave = $4
+        RETURNING *
+        "#;
+        let res = sqlx::query_as::<_, Score>(query)
+            .bind(score.heat_id)
+            .bind(score.judge_id)
+            .bind(score.surfer_id)
+            .bind(score.wave)
             .fetch_optional(db)
             .await?;
         Ok(res)

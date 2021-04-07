@@ -52,7 +52,6 @@ pub struct User {
     pub permissions: Option<Vec<Permission>>,
 }
 
-
 impl From<UserCore> for User {
     fn from(user: UserCore) -> User {
         User {
@@ -91,16 +90,17 @@ impl User {
             false => v.collect(),
         }
     }
-    
+
     pub async fn find_credentials_by_username(
         db: &Pool,
         username: &str,
     ) -> anyhow::Result<Option<UserCredentials>> {
-        let mut res = sqlx::query_as::<_, UserCredentialsCore>(r#"SELECT * FROM users WHERE username = $1"#)
-            .bind(username)
-            .fetch_optional(db)
-            .await?
-            .map(|r| UserCredentials::from(r));
+        let mut res =
+            sqlx::query_as::<_, UserCredentialsCore>(r#"SELECT * FROM users WHERE username = $1"#)
+                .bind(username)
+                .fetch_optional(db)
+                .await?
+                .map(|r| UserCredentials::from(r));
         if let Some(res) = &mut res {
             res.permissions = Permission::find_by_user_id(&db, res.id).await.ok();
         }

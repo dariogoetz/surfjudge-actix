@@ -1,14 +1,13 @@
 use crate::configuration::CONFIG;
 use crate::endpoints::{
     auth, category, heat, heat_advancement, heat_state, judge, lycra_color, pages, participation,
-    result, surfer, tournament, score
+    result, score, surfer, tournament,
 };
 
 use actix_files as fs;
 use actix_web::web;
 
-
-pub fn configure_apis(cfg: &mut web::ServiceConfig){
+pub fn configure_apis(cfg: &mut web::ServiceConfig) {
     if CONFIG.api.public_path.is_some() {
         public_api_routes(cfg);
     };
@@ -103,7 +102,7 @@ pub fn auth_api_routes(cfg: &mut web::ServiceConfig) {
         web::scope(&CONFIG.api.auth_path.as_ref().unwrap())
             .route("/me", web::get().to(auth::me))
             .route("/login", web::post().to(auth::login))
-            .route("/logout", web::post().to(auth::logout))
+            .route("/logout", web::post().to(auth::logout)),
     );
 }
 
@@ -132,10 +131,8 @@ pub fn admin_api_routes(cfg: &mut web::ServiceConfig) {
                 "/heats/{heat_id}/assigned_judges",
                 web::get().to(judge::get_assigned_judges_for_heat),
             )
-            .route(
-                "/judging_requests",
-                web::get().to(judge::get_requests),
-            ),
+            .route("/scores/{heat_id}/{judge_id}/{surfer_id}/{wave}", web::delete().to(score::delete))
+            .route("/judging_requests", web::get().to(judge::get_requests)),
     );
 }
 
@@ -148,17 +145,14 @@ pub fn judging_api_routes(cfg: &mut web::ServiceConfig) {
             )
             .route(
                 "/heats/{heat_id}/judges/{judge_id}/scores",
-                web::get().to(score::get_by_heat_id_and_judge_id)
+                web::get().to(score::get_by_heat_id_and_judge_id),
             )
             .route(
                 "/heats/{heat_id}/scores",
-                web::get().to(score::get_by_heat_id)
+                web::get().to(score::get_by_heat_id),
             )
             .route("/scores", web::put().to(score::put))
-            .route(
-                "/judging_requests",
-                web::post().to(judge::add_request),
-            )
+            .route("/judging_requests", web::post().to(judge::add_request)),
     );
 }
 

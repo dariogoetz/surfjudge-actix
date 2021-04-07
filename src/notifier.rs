@@ -21,7 +21,7 @@ pub enum Channel {
     Participants,
     Scores,
     JudgingRequests,
-    Heats
+    Heats,
 }
 
 // Message type sent to notifiers

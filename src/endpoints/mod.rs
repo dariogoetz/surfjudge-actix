@@ -8,9 +8,9 @@ pub mod judge;
 pub mod lycra_color;
 pub mod participation;
 pub mod result;
+pub mod score;
 pub mod surfer;
 pub mod tournament;
-pub mod score;
 
 pub mod pages;
 
