@@ -8,8 +8,8 @@ services:
     environment:
       - APP_DATABASE__URL=postgresql://postgres:surfjudge2000@postgres:5432/postgres
       - APP_SERVER_ADDRESS=0.0.0.0:8080
-      - APP_UI_SETTINGS__API_PATH=/public
-      - APP_UI_SETTINGS__WEBSOCKET_URL=wss://websocket.surfjudge.de
+      - APP_API__PUBLIC_PATH=/public
+      - APP_API__WEBSOCKET_URL=wss://websocket.surfjudge.de
     volumes:
       - ./static:/app/static:ro
       - ./templates:/app/templates:ro
