@@ -110,6 +110,7 @@ pub fn admin_api_routes(cfg: &mut web::ServiceConfig) {
     // public rest API endpoints
     cfg.service(
         web::scope(&CONFIG.api.admin_path.as_ref().unwrap())
+            .route("", web::get().to(pages::index_admin))
             .route(
                 "/heats/{heat_id}/start",
                 web::post().to(heat_state::start_heat),
@@ -138,6 +139,7 @@ pub fn admin_api_routes(cfg: &mut web::ServiceConfig) {
 pub fn judging_api_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope(&CONFIG.api.judging_path.as_ref().unwrap())
+            .route("", web::get().to(pages::index_judging))
             .route(
                 "/active_judge_assignments",
                 web::get().to(judge::get_assigned_active_heats_for_judge),

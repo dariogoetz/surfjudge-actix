@@ -17,7 +17,6 @@ mod logging;
 mod models;
 mod notifier;
 mod routes;
-mod templates;
 mod websockets;
 
 #[actix_web::main]
@@ -29,9 +28,6 @@ async fn main() -> Result<()> {
 
     info!(LOG, "Connecting to database: {:?}", CONFIG.database.url);
     let pool = database::get_pool().await?;
-
-    info!(LOG, "Loading templates from {:?}", CONFIG.template_dir);
-    let tmpl = templates::get_templates().await?;
 
     info!(LOG, "Loading auth rules form {:?}", CONFIG.auth.rules_file);
     let oso_state = web::Data::new(Arc::new(OsoState::new(&CONFIG.auth.rules_file)?));
@@ -70,7 +66,6 @@ async fn main() -> Result<()> {
             .app_data(sessions.clone())
             .app_data(oso_state.clone())
             .data(pool.clone())
-            .data(tmpl.clone())
             .data(notifier.clone())
             .wrap(Compress::default())
             .wrap(IdentityService::new(

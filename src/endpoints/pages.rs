@@ -1,17 +1,17 @@
-use crate::templates::{Context, Templates};
+use crate::configuration::CONFIG;
+use actix_files::NamedFile;
+use std::path::PathBuf;
 
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::Result;
 
-pub fn get_default_template_context() -> Context {
-    let mut ctx = Context::new();
-    ctx.insert("description", &"Surfjudge - actix");
-
-    ctx
+pub async fn index() -> Result<NamedFile> {
+    Ok(NamedFile::open::<PathBuf>(format!("{}/index.html", &CONFIG.template_dir).into())?)
 }
 
-pub async fn index(templates: web::Data<Templates>) -> impl Responder {
-    let ctx = get_default_template_context();
+pub async fn index_judging() -> Result<NamedFile> {
+    Ok(NamedFile::open::<PathBuf>(format!("{}/index-judging.html", &CONFIG.template_dir).into())?)
+}
 
-    let rendered = templates.render("index.html", &ctx).unwrap();
-    HttpResponse::Ok().body(rendered)
+pub async fn index_admin() -> Result<NamedFile> {
+    Ok(NamedFile::open::<PathBuf>(format!("{}/index-admin.html", &CONFIG.template_dir).into())?)
 }
