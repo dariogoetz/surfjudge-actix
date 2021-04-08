@@ -34,11 +34,10 @@ pub struct Notifications {
 
 #[derive(Deserialize, Debug)]
 pub struct Settings {
-    pub debug: String,
     pub server_address: String,
+    pub template_dir: String,
     pub database: Database,
     pub api: API,
-    pub template_dir: String,
     pub auth: Auth,
     pub notifications: Notifications,
 }
