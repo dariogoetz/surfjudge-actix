@@ -52,14 +52,14 @@ async fn main() -> Result<()> {
 
     if let Some(address) = &CONFIG.notifications.zmq_sender_address {
         info!(LOG, "Connecting ZMQ publisher at {}", address);
-        let zmq_notifier = notifier::ZMQNotifier::new(&format!("tcp://{}", address))?;
+        let zmq_notifier = notifier::ZMQNotifier::new(&format!("tcp://{}", address)).await?;
         notifier.register(Box::new(zmq_notifier))?;
     };
 
     if let Some(port) = &CONFIG.notifications.zmq_receiver_port {
         info!(LOG, "Listening for ZMQ messages on port {}", port);
-        let zmq_receiver = notifier::ZMQReceiver::new(&format!("tcp://*:{}", port), &notifier)?;
-        zmq_receiver.start()?;
+        let zmq_receiver = notifier::ZMQReceiver::new(&format!("tcp://0.0.0.0:{}", port), &notifier)?;
+        zmq_receiver.start().await?;
     };
 
     let private_key = rand::thread_rng().gen::<[u8; 32]>();

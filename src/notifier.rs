@@ -6,11 +6,11 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use slog::{debug, warn};
-use std::sync::mpsc::{self, Sender};
+use tokio::sync::mpsc::UnboundedSender;
 use std::sync::{Arc, Mutex};
-use std::thread;
+use std::convert::TryInto;
 use uuid::Uuid;
-use zmq::{Context, PUB};
+use zeromq::{Socket, PubSocket, SubSocket, BlockingSend, BlockingRecv};
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -68,24 +68,23 @@ impl Notify for WSNotifier {
 }
 
 pub struct ZMQNotifier {
-    addr: Sender<NotifierMessage>,
+    addr: UnboundedSender<NotifierMessage>,
 }
 
 impl ZMQNotifier {
-    pub fn new(addr: &str) -> Result<Self> {
-        let (server_sender, server_receiver) = mpsc::channel::<NotifierMessage>();
+    pub async fn new(addr: &str) -> Result<Self> {
+        let (server_sender, mut server_receiver) = tokio::sync::mpsc::unbounded_channel::<NotifierMessage>();
 
-        let context = Context::new();
-        let publisher = context.socket(PUB).unwrap();
-        publisher.connect(addr)?;
+        let mut publisher = PubSocket::new();
+        publisher.connect(addr).await?;
 
-        thread::spawn(move || {
+        actix::spawn(async move {
             debug!(LOG, "Started ZMQ sender thread");
 
-            while let Ok(msg) = server_receiver.recv() {
+            while let Some(msg) = server_receiver.recv().await {
                 let msg = serde_json::to_string(&msg).unwrap();
                 debug!(LOG, "Sending ZMQ message: {}", msg);
-                match publisher.send(&msg, 0) {
+                match publisher.send(msg.into()).await {
                     Err(e) => warn!(LOG, "Could not send zmq message: {:?}", e),
                     _ => (),
                 }
@@ -117,30 +116,30 @@ impl ZMQReceiver {
         Ok(ZMQReceiver { address, notifier })
     }
 
-    pub fn start(&self) -> Result<()> {
+    pub async fn start(&self) -> Result<()> {
         let addr = self.address.clone();
         let notifier = self.notifier.clone();
 
-        let context = zmq::Context::new();
-        let subscriber = context.socket(zmq::SUB).unwrap();
-        subscriber.set_subscribe(b"").unwrap();
-        subscriber.bind(&addr).expect(&format!(
+        let mut subscriber = SubSocket::new();
+        subscriber.bind(&addr).await.expect(&format!(
             "Could not bind address {} for ZMQ receiver",
             &addr
         ));
+        subscriber.subscribe("").await?;
 
-        thread::spawn(move || {
-            debug!(LOG, "Started ZMQ listener thread");
+        actix::spawn(async move {
+            debug!(LOG, "Started ZMQ listener");
 
             loop {
-                let msg = match subscriber.recv_msg(0) {
+                let msg = match subscriber.recv().await {
                     Ok(x) => x,
                     Err(_err) => {
                         warn!(LOG, "Error while reading zmq message");
                         continue;
                     }
                 };
-                let msg = match std::str::from_utf8(&msg) {
+                let msg: String = match msg.try_into() {
+                //let msg = match std::str::from_utf8(&msg) {
                     Ok(x) => x,
                     Err(_err) => {
                         warn!(LOG, "Error while parsing zmq message to utf-8");
