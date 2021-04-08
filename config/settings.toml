@@ -35,4 +35,4 @@ rules_file = "config/auth_rules.polar"
 # zmq_receiver_port = "6545"
 
 # start own websocket server
-# websocket_server_address = "0.0.0.0:6544"
+# websocket_server_address = "/ws"
