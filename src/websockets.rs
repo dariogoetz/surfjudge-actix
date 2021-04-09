@@ -1,5 +1,5 @@
 use crate::logging::LOG;
-use crate::notifier::Channel;
+use crate::notifier::{Notifier, Channel};
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -10,7 +10,7 @@ use std::{
 };
 
 use actix::prelude::*;
-use actix_web::{web, Error, HttpRequest, HttpResponse};
+use actix_web::{error, web, Error, HttpRequest, HttpResponse, Result};
 use actix_web_actors::ws;
 
 /// Entry point for the websocket route
@@ -27,6 +27,25 @@ pub async fn ws_route(
         &req,
         stream,
     )
+}
+
+
+// Message type sent to notifiers
+#[derive(Deserialize, Debug)]
+pub struct NotifierMessage {
+    channel: Channel,
+    message: String,
+}
+/// Post to a channel
+pub async fn post(
+    web::Json(msg): web::Json<NotifierMessage>,
+    notifier: web::Data<Notifier>,
+) -> Result<web::Json<bool>> {
+    notifier.send(msg.channel, serde_json::from_str(&msg.message)?)
+        .map_err(|e| {
+            error::ErrorInternalServerError(format!("Error sending message to notifier: {:?}", e))
+        })?;
+        Ok(web::Json(true))
 }
 
 // identifier for websocket clients

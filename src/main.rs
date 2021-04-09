@@ -80,7 +80,9 @@ async fn main() -> Result<()> {
             .route("/config", web::get().to(endpoints::config::get_ui_config));
 
         let app = if let Some(address) = &CONFIG.notifications.websocket_server_address {
-            app.data(websocket_server.clone().unwrap())
+            app
+                .data(websocket_server.clone().unwrap())
+                .route(&format!("{}/messages", address), web::post().to(websockets::post))
                 .route(address, web::get().to(websockets::ws_route))
         } else {
             app
