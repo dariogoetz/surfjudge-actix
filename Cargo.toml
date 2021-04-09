@@ -34,9 +34,12 @@ oso = "^0.11"
 bcrypt = "^0.9"
 uuid = { version="^0.8", features=[ "serde", "v4"]}
 
-zeromq = { version = "0.2.0", default-features = false, features = ["tokio-runtime"], optional = true }
+zmq = { version = "^0.9", optional = true }
+zeromq = { version = "^0.2", default-features = false, features = ["tokio-runtime"], optional = true }
 tokio = { version = "^1.4", optional = true }
 
 [features]
 zmq-notifier-async = ["zeromq", "tokio"]
 zmq-receiver-async = ["zeromq"]
+zmq-notifier = ["zmq"]
+zmq-receiver = ["zmq"]

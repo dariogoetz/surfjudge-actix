@@ -46,16 +46,40 @@ async fn main() -> Result<()> {
         None
     };
 
+    #[cfg(all(feature = "zmq-notifier", feature = "zmq-notifier-async"))]
+    compile_error!("feature \"zmq-notifier\" and feature \"zmq-notifier-async\" cannot be enabled at the same time");
+
+    #[cfg(all(feature = "zmq-receiver", feature = "zmq-receiver-async"))]
+    compile_error!("feature \"zmq-receiver\" and feature \"zmq-receiver-async\" cannot be enabled at the same time");
+
     #[cfg(feature = "zmq-notifier")]
     if let Some(address) = &CONFIG.notifications.zmq_sender_address {
         use notifier::zmq_notifier::ZMQNotifier;
 
-        info!(LOG, "Connecting ZMQ publisher at {}", address);
-        let zmq_notifier = ZMQNotifier::new(&format!("tcp://{}", address)).await?;
+        info!(LOG, "Connecting ZMQ publisher to {}", address);
+        let zmq_notifier = ZMQNotifier::new(&format!("tcp://{}", address))?;
         notifier.register(Box::new(zmq_notifier))?;
     };
 
     #[cfg(feature = "zmq-receiver")]
+    if let Some(port) = &CONFIG.notifications.zmq_receiver_port {
+        use notifier::zmq_receiver::ZMQReceiver;
+
+        info!(LOG, "Listening for ZMQ messages on port {}", port);
+        let zmq_receiver = ZMQReceiver::new(&format!("tcp://0.0.0.0:{}", port), &notifier)?;
+        zmq_receiver.start()?;
+    };
+
+    #[cfg(feature = "zmq-notifier-async")]
+    if let Some(address) = &CONFIG.notifications.zmq_sender_address {
+        use notifier::zmq_notifier::ZMQNotifier;
+
+        info!(LOG, "Connecting ZMQ publisher to {}", address);
+        let zmq_notifier = ZMQNotifier::new(&format!("tcp://{}", address)).await?;
+        notifier.register(Box::new(zmq_notifier))?;
+    };
+
+    #[cfg(feature = "zmq-receiver-async")]
     if let Some(port) = &CONFIG.notifications.zmq_receiver_port {
         use notifier::zmq_receiver::ZMQReceiver;
 
