@@ -46,12 +46,6 @@ async fn main() -> Result<()> {
         None
     };
 
-    #[cfg(all(feature = "zmq-notifier", feature = "zmq-notifier-async"))]
-    compile_error!("feature \"zmq-notifier\" and feature \"zmq-notifier-async\" cannot be enabled at the same time");
-
-    #[cfg(all(feature = "zmq-receiver", feature = "zmq-receiver-async"))]
-    compile_error!("feature \"zmq-receiver\" and feature \"zmq-receiver-async\" cannot be enabled at the same time");
-
     #[cfg(feature = "zmq-notifier")]
     if let Some(address) = &CONFIG.notifications.zmq_sender_address {
         use notifier::zmq_notifier::ZMQNotifier;
