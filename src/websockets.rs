@@ -41,7 +41,10 @@ pub async fn post(
     web::Json(msg): web::Json<NotifierMessage>,
     notifier: web::Data<Notifier>,
 ) -> Result<web::Json<bool>> {
-    notifier.send(msg.channel, serde_json::from_str(&msg.message)?)
+    let message = serde_json::from_str(&msg.message).map_err(|e| {
+        error::ErrorBadRequest(format!("Error parsing 'message' field to JSON: {:?}", e))
+    })?;
+    notifier.send(msg.channel, message)
         .map_err(|e| {
             error::ErrorInternalServerError(format!("Error sending message to notifier: {:?}", e))
         })?;
