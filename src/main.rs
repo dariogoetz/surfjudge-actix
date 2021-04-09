@@ -46,15 +46,21 @@ async fn main() -> Result<()> {
         None
     };
 
+    #[cfg(feature = "zmq-notifier")]
     if let Some(address) = &CONFIG.notifications.zmq_sender_address {
+        use notifier::zmq_notifier::ZMQNotifier;
+
         info!(LOG, "Connecting ZMQ publisher at {}", address);
-        let zmq_notifier = notifier::ZMQNotifier::new(&format!("tcp://{}", address)).await?;
+        let zmq_notifier = ZMQNotifier::new(&format!("tcp://{}", address)).await?;
         notifier.register(Box::new(zmq_notifier))?;
     };
 
+    #[cfg(feature = "zmq-receiver")]
     if let Some(port) = &CONFIG.notifications.zmq_receiver_port {
+        use notifier::zmq_receiver::ZMQReceiver;
+
         info!(LOG, "Listening for ZMQ messages on port {}", port);
-        let zmq_receiver = notifier::ZMQReceiver::new(&format!("tcp://0.0.0.0:{}", port), &notifier)?;
+        let zmq_receiver = ZMQReceiver::new(&format!("tcp://0.0.0.0:{}", port), &notifier)?;
         zmq_receiver.start().await?;
     };
 
