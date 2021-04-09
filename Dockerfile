@@ -7,7 +7,7 @@ WORKDIR ./surfjudge-actix
 
 COPY ./Cargo.toml   ./Cargo.toml
 
-RUN cargo build --release
+RUN cargo build --release --features zmq-receiver,zmq-notifier
 RUN rm src/*.rs
 
 ADD . ./
