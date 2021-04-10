@@ -19,6 +19,8 @@ pub struct AuthenticatedUser {
     pub id: u32,
     pub username: String,
     pub permissions: Vec<PermissionType>,
+    pub first_name: String,
+    pub last_name: String,
 }
 
 impl AuthenticatedUser {
@@ -84,36 +86,44 @@ pub async fn authenticate_user(
     username: &str,
     password: &str,
 ) -> Option<AuthenticatedUser> {
-    // find user in database
-    let user = User::find_credentials_by_username(db, username)
+    // find user credentials in database
+    let user_credentials = User::find_credentials_by_username(db, username)
         .await
         .ok()
         .unwrap_or(None);
 
-    if user.is_none() {
+    if user_credentials.is_none() {
         return None;
     }
 
     // user with that username exists
-    let user = user.unwrap();
+    let user_credentials = user_credentials.unwrap();
 
     // verify password
-    if !verify_password(password, &user.password_hash) {
+    if !verify_password(password, &user_credentials.password_hash) {
         info!(LOG, "Wrong password entered for user {:?}", username);
         return None;
     }
 
     // collect PermissionTypes for AuthenticatedUser
-    let permissions = user
+    let permissions = user_credentials
         .permissions
         .unwrap_or(Vec::new())
         .iter()
         .map(|p| p.permission.clone())
         .collect();
 
+    // find user credentials in database
+    let user = User::find_by_id(db, user_credentials.id as u32, false)
+        .await
+        .unwrap()
+        .unwrap();
+
     Some(AuthenticatedUser {
         id: user.id as u32,
         username: username.to_string(),
         permissions: permissions,
+        first_name: user.first_name,
+        last_name: user.last_name,
     })
 }
