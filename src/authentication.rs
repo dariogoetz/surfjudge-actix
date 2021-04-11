@@ -10,7 +10,7 @@ use dashmap::DashMap;
 use futures::future::Future;
 use oso::PolarClass;
 use serde::Serialize;
-use slog::{info, warn};
+use slog::{debug, info, warn};
 use std::pin::Pin;
 
 #[derive(Serialize, Debug, Default, Clone, PolarClass)]
@@ -70,7 +70,7 @@ impl FromRequest for AuthenticatedUser {
                     identity.forget();
                 }
             } else {
-                warn!(LOG, "User not logged in!");
+                debug!(LOG, "User not logged in!");
             };
             Err(ErrorUnauthorized("unauthorized"))
         })
