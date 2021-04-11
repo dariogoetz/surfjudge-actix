@@ -58,7 +58,7 @@ pub async fn put(
             Channel::Scores,
             json!({
                 "heat_id": score.heat_id,
-                "msg": "changed"
+                "judge_id": user.0.id
             }),
         )
         .unwrap();
@@ -89,7 +89,7 @@ pub async fn delete(
             Channel::Scores,
             json!({
                 "heat_id": delete_score.heat_id,
-                "msg": "changed"
+                "judge_id": user.0.id
             }),
         )
         .unwrap();
