@@ -36,6 +36,7 @@ pub struct Notifications {
 pub struct Settings {
     pub server_address: String,
     pub template_dir: String,
+    pub cors_origins: Option<String>,
     pub database: Database,
     pub api: API,
     pub auth: Auth,

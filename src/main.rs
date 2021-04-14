@@ -85,7 +85,16 @@ async fn main() -> Result<()> {
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
     let sessions = web::Data::new(Sessions::new());
     info!(LOG, "Starting server at {:?}", CONFIG.server_address);
+
     let server = HttpServer::new(move || {
+
+        let mut cors = Cors::permissive();
+        if let Some(origin_str) = &CONFIG.cors_origins {
+            for origin in origin_str.split(",") {
+                cors = cors.allowed_origin(origin);
+            };
+        }
+
         let app = App::new()
             .app_data(sessions.clone())
             .app_data(oso_state.clone())
@@ -97,7 +106,7 @@ async fn main() -> Result<()> {
                     .name("surfjudge-actix")
                     .secure(false),
             ))
-            .wrap(Cors::permissive())
+            .wrap(cors)
             .wrap(Compress::default())
             // enable logger - always register actix-web Logger middleware last
             .wrap(Logger::default())
