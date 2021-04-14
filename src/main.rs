@@ -87,12 +87,15 @@ async fn main() -> Result<()> {
     info!(LOG, "Starting server at {:?}", CONFIG.server_address);
 
     let server = HttpServer::new(move || {
-
         let mut cors = Cors::permissive();
         if let Some(origin_str) = &CONFIG.cors_origins {
-            for origin in origin_str.split(",") {
+            for origin in origin_str
+                .split(",")
+                .map(|s| s.trim())
+                .filter(|s| s.len() > 0)
+            {
                 cors = cors.allowed_origin(origin);
-            };
+            }
         }
 
         let app = App::new()
@@ -113,9 +116,11 @@ async fn main() -> Result<()> {
             .route("/config", web::get().to(endpoints::config::get_ui_config));
 
         let app = if let Some(address) = &CONFIG.notifications.websocket_server_address {
-            app
-                .data(websocket_server.clone().unwrap())
-                .route(&format!("{}/messages", address), web::post().to(websockets::post))
+            app.data(websocket_server.clone().unwrap())
+                .route(
+                    &format!("{}/messages", address),
+                    web::post().to(websockets::post),
+                )
                 .route(address, web::get().to(websockets::ws_route))
         } else {
             app
