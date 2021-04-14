@@ -56,9 +56,9 @@ pub static CONFIG: Lazy<Settings> = Lazy::new(|| {
         // Add in `./config/development.toml` or `./config/production.toml`, depending on RUN_MODE
         .merge(File::with_name(&format!("config/{}", run_mode)).required(false))
         .unwrap()
-        // Add in settings from the environment (with a prefix of APP)
-        // Eg.. `APP_DEBUG=1 ./target/app` would set the `debug` key
-        .merge(Environment::with_prefix("APP").separator("__"))
+        // Add in settings from the environment
+        // Eg.. `DEBUG=1 ./target/app` would set the `debug` key
+        .merge(Environment::new().separator("__"))
         .unwrap();
 
     match settings.try_into() {
