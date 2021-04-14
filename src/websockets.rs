@@ -1,5 +1,5 @@
 use crate::logging::LOG;
-use crate::notifier::{Notifier, Channel};
+use crate::notifier::{Channel, Notifier};
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -29,7 +29,6 @@ pub async fn ws_route(
     )
 }
 
-
 // Message type sent to notifiers
 #[derive(Deserialize, Debug)]
 pub struct NotifierMessage {
@@ -44,11 +43,10 @@ pub async fn post(
     let message = serde_json::from_str(&msg.message).map_err(|e| {
         error::ErrorBadRequest(format!("Error parsing 'message' field to JSON: {:?}", e))
     })?;
-    notifier.send(msg.channel, message)
-        .map_err(|e| {
-            error::ErrorInternalServerError(format!("Error sending message to notifier: {:?}", e))
-        })?;
-        Ok(web::Json(true))
+    notifier.send(msg.channel, message).map_err(|e| {
+        error::ErrorInternalServerError(format!("Error sending message to notifier: {:?}", e))
+    })?;
+    Ok(web::Json(true))
 }
 
 // identifier for websocket clients

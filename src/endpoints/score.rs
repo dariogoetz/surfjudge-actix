@@ -1,6 +1,6 @@
 use crate::authorization::AuthorizedUser;
 use crate::database::Pool;
-use crate::models::score::{Score, DeleteScore};
+use crate::models::score::{DeleteScore, Score};
 use crate::notifier::{Channel, Notifier};
 
 use actix_web::{error, web, Result};
