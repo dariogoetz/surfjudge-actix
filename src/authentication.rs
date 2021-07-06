@@ -122,7 +122,7 @@ pub async fn authenticate_user(
     Some(AuthenticatedUser {
         id: user.id as u32,
         username: username.to_string(),
-        permissions: permissions,
+        permissions,
         first_name: user.first_name,
         last_name: user.last_name,
     })
