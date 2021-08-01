@@ -6,7 +6,7 @@ use std::sync::Arc;
 use actix::prelude::*;
 use actix_cors::Cors;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
-use actix_web::{middleware::Compress, middleware::Logger, web, App, HttpServer};
+use actix_web::{middleware::Compress, middleware::Logger, web::{self, Data}, App, HttpServer};
 
 mod authentication;
 mod authorization;
@@ -99,10 +99,10 @@ async fn main() -> Result<()> {
         }
 
         let app = App::new()
-            .app_data(sessions.clone())
-            .app_data(oso_state.clone())
-            .data(pool.clone())
-            .data(notifier.clone())
+            .app_data(Data::new(sessions.clone()))
+            .app_data(Data::new(oso_state.clone()))
+            .app_data(Data::new(pool.clone()))
+            .app_data(Data::new(notifier.clone()))
             .wrap(Compress::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&private_key)
@@ -116,7 +116,7 @@ async fn main() -> Result<()> {
             .route("/config", web::get().to(endpoints::config::get_ui_config));
 
         let app = if let Some(address) = &CONFIG.notifications.websocket_server_address {
-            app.data(websocket_server.clone().unwrap())
+            app.app_data(Data::new(websocket_server.clone().unwrap()))
                 .route(
                     &format!("{}/messages", address),
                     web::post().to(websockets::post),
