@@ -1,6 +1,7 @@
 server_address = "127.0.0.1:8081"
 template_dir = "templates"
 
+# cors_origins = http://localhost:8080
 
 [database]
 url = "postgresql://postgres:surfjudge2000@localhost:5432/postgres"

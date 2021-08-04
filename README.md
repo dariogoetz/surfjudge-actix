@@ -1,5 +1,4 @@
 # Installation of dev system
-
 1. Install docker
 2. Install docker-compose
 3. Run `sudo docker-compose up -d` in top directory
@@ -12,3 +11,7 @@
 2. Install musl, e.g. `pacman -S musl`
 3. Install musl target for rust `rustup target add x86_64-unknown-linux-musl --toolchain=1.45.2`
 4. Build the executable `cargo build --release --target=x86_64-unknown-linux-musl`
+
+# Notes
+- put static files into a `static` directory next to `src`
+- put index html files (`index.html`, `index-judging.html`, `index-admin.html`) into a `templates` directory next to `src`

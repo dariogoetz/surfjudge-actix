@@ -49,6 +49,8 @@ impl JudgingRequest {
         }
     }
 
+    // TODO: invalidate old judging requests
+
     async fn find_vec(db: &Pool, query: &'static str, expand: bool) -> anyhow::Result<Vec<Self>> {
         let res = sqlx::query_as::<_, JudgingRequestCore>(query)
             .fetch_all(db)
