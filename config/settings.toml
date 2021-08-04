@@ -20,7 +20,7 @@ public_path = "/public"
 # judging_path = "/judging"
 
 # serve admin api endpoints
-# admin = "/admin"
+# admin_path = "/admin"
 
 
 [auth]

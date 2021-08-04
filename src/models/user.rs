@@ -37,8 +37,8 @@ impl From<UserCredentialsCore> for UserCredentials {
 pub struct UserCore {
     pub id: i32,
     pub username: String,
-    pub first_name: String,
-    pub last_name: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
     pub additional_info: Option<String>,
 }
 
@@ -57,8 +57,8 @@ impl From<UserCore> for User {
         User {
             id: user.id,
             username: user.username,
-            first_name: user.first_name,
-            last_name: user.last_name,
+            first_name: user.first_name.unwrap_or("".to_string()),
+            last_name: user.last_name.unwrap_or("".to_string()),
             additional_info: user.additional_info,
             permissions: None,
         }

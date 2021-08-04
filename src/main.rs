@@ -27,10 +27,10 @@ async fn main() -> Result<()> {
     use logging::LOG;
 
     info!(LOG, "Connecting to database: {:?}", CONFIG.database.url);
-    let pool = database::get_pool().await?;
+    let pool = Data::new(database::get_pool().await?);
 
     info!(LOG, "Loading auth rules form {:?}", CONFIG.auth.rules_file);
-    let oso_state = web::Data::new(Arc::new(OsoState::new(&CONFIG.auth.rules_file)?));
+    let oso_state = Data::new(Arc::new(OsoState::new(&CONFIG.auth.rules_file)?));
 
     let mut notifier = notifier::Notifier::new()?;
     let websocket_server = if let Some(address) = &CONFIG.notifications.websocket_server_address {
@@ -45,6 +45,7 @@ async fn main() -> Result<()> {
     } else {
         None
     };
+    let notifier = Data::new(notifier);
 
     #[cfg(feature = "zmq-notifier")]
     if let Some(address) = &CONFIG.notifications.zmq_sender_address {
@@ -83,7 +84,7 @@ async fn main() -> Result<()> {
     };
 
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
-    let sessions = web::Data::new(Sessions::new());
+    let sessions = Data::new(Sessions::new());
     info!(LOG, "Starting server at {:?}", CONFIG.server_address);
 
     let server = HttpServer::new(move || {
@@ -99,10 +100,10 @@ async fn main() -> Result<()> {
         }
 
         let app = App::new()
-            .app_data(Data::new(sessions.clone()))
-            .app_data(Data::new(oso_state.clone()))
-            .app_data(Data::new(pool.clone()))
-            .app_data(Data::new(notifier.clone()))
+            .app_data(sessions.clone())
+            .app_data(oso_state.clone())
+            .app_data(pool.clone())
+            .app_data(notifier.clone())
             .wrap(Compress::default())
             .wrap(IdentityService::new(
                 CookieIdentityPolicy::new(&private_key)
