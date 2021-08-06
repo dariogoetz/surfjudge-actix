@@ -6,7 +6,7 @@ use futures::future;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
-// this struct represents a judge database record
+// this struct represents a judging request database record
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct JudgingRequestCore {
     pub judge_id: i32,
