@@ -60,7 +60,20 @@ impl JudgingRequest {
         Ok(Self::expand_vec(&db, res, expand).await)
     }
 
+    pub async fn expire(db: &Pool) -> anyhow::Result<()> {
+        sqlx::query(
+            r#"
+DELETE FROM judging_requests
+WHERE expire_date < NOW();
+        "#
+        )
+        .execute(db)
+        .await?;
+        Ok(())
+    }
+
     pub async fn find_all(db: &Pool, expand: bool) -> anyhow::Result<Vec<Self>> {
+        Self::expire(&db).await?;
         Self::find_vec(&db, r#"SELECT * FROM judging_requests"#, expand).await
     }
 
