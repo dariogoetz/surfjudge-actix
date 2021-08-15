@@ -24,6 +24,7 @@ pub enum Channel {
     Participants,
     Scores,
     JudgingRequests,
+    JudgingAssignments,
     Heats,
 }
 

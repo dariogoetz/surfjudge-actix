@@ -1,7 +1,7 @@
 use crate::authorization::AuthorizedUser;
 use crate::database::Pool;
 use crate::models::heat::Heat;
-use crate::models::judge::JudgingRequest;
+use crate::models::judge::{JudgingRequest, JudgingAssignment};
 use crate::models::permission::PermissionType;
 use crate::models::user::User;
 use crate::notifier::{Channel, Notifier};
@@ -48,6 +48,43 @@ pub async fn get_assigned_active_heats_for_judge(
             error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
         })?;
     Ok(web::Json(result))
+}
+
+
+pub async fn add_assignment(
+    path: web::Path<(u32, u32)>,
+    db: web::Data<Pool>,
+    notifier: web::Data<Notifier>,
+    _: AuthorizedUser,
+) -> Result<web::Json<&'static str>> {
+    let (heat_id, judge_id) = path.into_inner();
+    JudgingAssignment::add(db.get_ref(), heat_id, judge_id)
+        .await
+        .map_err(|e|{
+            error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+        })?;
+    notifier
+        .send(Channel::JudgingAssignments, json!("changed"))
+        .unwrap();
+    Ok(web::Json("Judging assignment added!"))
+}
+
+pub async fn delete_assignment(
+    path: web::Path<(u32, u32)>,
+    db: web::Data<Pool>,
+    notifier: web::Data<Notifier>,
+    _: AuthorizedUser,
+) -> Result<web::Json<&'static str>> {
+    let (heat_id, judge_id) = path.into_inner();
+    JudgingAssignment::delete(db.get_ref(), heat_id, judge_id)
+        .await
+        .map_err(|e|{
+            error::ErrorInternalServerError(format!("Error fetching data from database: {:?}", e))
+        })?;
+    notifier
+        .send(Channel::JudgingAssignments, json!("changed"))
+        .unwrap();
+    Ok(web::Json("Judging assignment deleted!"))
 }
 
 pub async fn get_requests(

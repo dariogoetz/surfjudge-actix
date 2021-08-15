@@ -81,3 +81,42 @@ RETURNING judge_id;
         Ok(res.rows_affected() > 0)
     }
 }
+
+
+// this struct represents a judging request database record
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct JudgingAssignment {
+    pub judge_id: i32,
+    pub heat_id: i32,
+}
+
+impl JudgingAssignment {
+    pub async fn add(db: &Pool, heat_id: u32, judge_id: u32) -> anyhow::Result<bool> {
+        let res = sqlx::query(
+            r#"
+INSERT INTO judge_assignments (heat_id, judge_id)
+VALUES ($1, $2)
+ON CONFLICT (heat_id, judge_id) DO NOTHING;
+        "#,
+        )
+        .bind(heat_id)
+        .bind(judge_id)
+        .execute(db)
+        .await?;
+        Ok(res.rows_affected() > 0)
+    }
+
+    pub async fn delete(db: &Pool, heat_id: u32, judge_id: u32) -> anyhow::Result<bool> {
+        let res = sqlx::query(
+            r#"
+DELETE FROM judge_assignments
+WHERE heat_id = $1 AND judge_id = $2;
+        "#,
+        )
+        .bind(heat_id)
+        .bind(judge_id)
+        .execute(db)
+        .await?;
+        Ok(res.rows_affected() > 0)
+    }
+}
