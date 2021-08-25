@@ -11,3 +11,4 @@ pub mod score;
 pub mod surfer;
 pub mod tournament;
 pub mod user;
+pub mod preliminary_result;

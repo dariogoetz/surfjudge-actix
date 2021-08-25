@@ -18,6 +18,7 @@ mod models;
 mod notifier;
 mod routes;
 mod websockets;
+mod score_computation;
 
 #[actix_web::main]
 async fn main() -> Result<()> {
