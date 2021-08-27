@@ -19,12 +19,13 @@ fn compute_individual_score(
     judges: &[User],
     scores: &[&Score],
 ) -> WaveScore {
-    info!(LOG, "{:?}", scores);
+    info!(LOG, "Scores for surfer {} in wave {}: {:?}", surfer_id, wave, scores);
     // TODO: check if all judges provided a score
     // TODO: sort scores by score
     // TODO: remove best and worst score
     // TODO: take mean of remaining scores
     let score = scores.iter().map(|s| s.score).sum::<f64>() / scores.len() as f64;
+    info!(LOG, "Averaged score: {}", score);
     WaveScore {
         surfer_id,
         wave,
@@ -48,7 +49,6 @@ impl ResultComputation for Default {
                         .push(s);
                     acc
                 });
-        info!(LOG, "Grouped scores: {:?}", grouped_scores);
 
         // compute individual results per wave and surfer (use compute_individual_score)
         let wave_scores: Vec<(i32, i32, WaveScore)> = grouped_scores
