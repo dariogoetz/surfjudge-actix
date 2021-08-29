@@ -6,7 +6,7 @@ use futures::future;
 use serde::{Deserialize, Serialize};
 use sqlx::{types::Json, FromRow};
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct WaveScore {
     pub surfer_id: i32,
     pub wave: i32,
@@ -30,7 +30,7 @@ pub struct Result {
     pub surfer_id: i32,
     pub total_score: f64,
     pub place: i32,
-    pub wave_scores: Json<Vec<WaveScore>>,
+    pub wave_scores: Vec<WaveScore>,
     pub heat: Option<Heat>,
     pub surfer: Option<Surfer>,
 }
@@ -43,7 +43,7 @@ impl From<ResultCore> for Result {
             surfer_id: result.surfer_id,
             total_score: result.total_score,
             place: result.place,
-            wave_scores: result.wave_scores,
+            wave_scores: result.wave_scores.0,
             heat: None,
             surfer: None,
         }

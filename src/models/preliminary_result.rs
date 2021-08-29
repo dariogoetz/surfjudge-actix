@@ -16,7 +16,7 @@ impl PreliminaryResult {
         let scores = Score::find_by_heat(db, heat_id)
             .await?;
 
-        let results = Default::compute_results(&judges, &scores);
+        let results = Default::compute_results(heat_id as i32, &judges, &scores);
 
         Ok(results)
     }

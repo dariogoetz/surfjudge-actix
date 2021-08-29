@@ -9,7 +9,13 @@ use slog::info;
 use std::collections::HashMap;
 
 pub trait ResultComputation {
-    fn compute_results(judges: &[User], scores: &[Score]) -> Vec<Result>;
+    fn compute_results(heat_id: i32, judges: &[User], scores: &[Score]) -> Vec<Result>;
+}
+
+
+fn round_prec(val: f64, prec: i32) -> f64 {
+    let d = (10.0_f64).powi(prec);
+    (val * d).round() / d
 }
 
 // TODO: define an errortype for this, e.g. if not all judges gave a score
@@ -36,7 +42,7 @@ fn compute_individual_score(
 pub struct Default {}
 
 impl ResultComputation for Default {
-    fn compute_results(judges: &[User], scores: &[Score]) -> Vec<Result> {
+    fn compute_results(heat_id: i32, judges: &[User], scores: &[Score]) -> Vec<Result> {
         let n_best_waves = 2;
 
         // divide scores by wave id and surfer
@@ -63,7 +69,7 @@ impl ResultComputation for Default {
             .collect();
 
         // collect wave scores by surfer
-        let surfer_scores = wave_scores.iter().fold(
+        let mut surfer_scores = wave_scores.iter().fold(
             HashMap::<i32, Vec<&WaveScore>>::new(),
             |mut acc, (surfer_id, _, wave_score)| {
                 acc.entry(*surfer_id).or_insert(Vec::new()).push(wave_score);
@@ -72,31 +78,69 @@ impl ResultComputation for Default {
         );
 
         // determine best n waves by surfer
-        let best_n_scores: Vec<(i32, Vec<&WaveScore>)> = surfer_scores
-            .into_iter()
-            .map(|(surfer_id, mut wave_scores)| {
+        let mut total_scores: Vec<(i32, Vec<f64>)> = surfer_scores
+            .iter_mut()
+            .map(|(&surfer_id, wave_scores)| {
                 // sort waves by score
                 wave_scores.sort_by(|s1, s2| s2.score.partial_cmp(&s1.score).unwrap());
 
                 // only take best n waves
-                let best_scores: Vec<&WaveScore> =
-                    wave_scores.into_iter().take(n_best_waves).collect();
+                let total_score: f64 =
+                    wave_scores.iter().take(n_best_waves).map(|s| round_prec(s.score, 5)).sum();
 
-                (surfer_id, best_scores)
+                let other_scores: Vec<f64> = wave_scores.iter().skip(n_best_waves).map(|s| round_prec(s.score, 5)).collect();
+                let mut rank_scores = Vec::new();
+                rank_scores.push(total_score);
+                rank_scores.extend(other_scores);
+
+                (surfer_id, rank_scores)
             })
             .collect();
-        info!(LOG, "Best 2 waves: {:?}", best_n_scores);
 
-        // TODO: compute total scores and placings
-        // TODO: generate results
-        Vec::new()
+        // sort surfer scores lexicographically by total score and then all other scores
+        total_scores.sort_by(|(_, s1), (_, s2)| s2.partial_cmp(s1).unwrap());
+
+        // if two surfers have exactily the same scores, they should have the same placing
+        let mut results = Vec::new();
+        let mut place: i32 = 0;
+        let mut prev_place = 0;
+        let mut prev_rank_scores: Option<&Vec<f64>> = None;
+        for (idx, (surfer_id, rank_scores)) in total_scores.iter().enumerate() {
+            if let Some(prev) = prev_rank_scores {
+                if *prev == *rank_scores {
+                    place = prev_place;
+                } else {
+                    prev_place = idx as i32;
+                    place = idx as i32;
+                }
+            }
+            prev_rank_scores = Some(rank_scores);
+
+            let mut total_score = 0.0;
+            if rank_scores.len() > 0 {
+                total_score = rank_scores[0];
+            }
+
+            results.push(Result {
+                surfer_id: *surfer_id,
+                heat_id,
+                place,
+                total_score,
+                wave_scores: surfer_scores.get(&surfer_id).unwrap().iter().map(|&s| s.clone()).collect(),
+                heat: None,
+                surfer: None,
+            });
+            info!(LOG, "Surfer {}, score {:?}, place {}", surfer_id, rank_scores, place);
+        }
+
+        results
     }
 }
 
 pub struct RSL {}
 
 impl ResultComputation for RSL {
-    fn compute_results(judges: &[User], scores: &[Score]) -> Vec<Result> {
+    fn compute_results(heat_id: i32, judges: &[User], scores: &[Score]) -> Vec<Result> {
         Vec::new()
     }
 }
