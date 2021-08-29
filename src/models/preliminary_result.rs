@@ -2,7 +2,8 @@ use crate::database::Pool;
 use crate::models::result::Result;
 use crate::models::user::User;
 use crate::models::score::Score;
-use crate::score_computation::{ResultComputation, Default};
+use crate::models::heat::{Heat, HeatType};
+use crate::score_computation::{DefaultHeat, RSLHeat, compute_results};
 
 pub struct PreliminaryResult {}
 
@@ -15,8 +16,15 @@ impl PreliminaryResult {
             .await?;
         let scores = Score::find_by_heat(db, heat_id)
             .await?;
+        let heat = Heat::find_by_id(db, heat_id, false)
+            .await?
+            .unwrap();
 
-        let results = Default::compute_results(heat_id as i32, &judges, &scores);
+        let results = match heat.heat_type {
+            HeatType::Standard => compute_results(heat_id as i32, &judges, &scores, &DefaultHeat::default()),
+            HeatType::Call => compute_results(heat_id as i32, &judges, &scores, &RSLHeat{}),
+            _ => Vec::new()
+        };
 
         Ok(results)
     }

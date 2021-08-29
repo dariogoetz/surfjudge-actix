@@ -9,11 +9,39 @@ use slog::info;
 use std::collections::HashMap;
 
 pub trait ResultComputation {
-    fn compute_results(heat_id: i32, judges: &[User], scores: &[Score]) -> Vec<Result>;
+    fn process_wave_scores(&self, heat_id: i32, judges: &[User], wave_scores: &Vec<(i32, i32, WaveScore)>) -> Vec<Result>;
 }
 
 const PRECISION: i32 = 5;
-const N_BEST_WAVES: usize = 2;
+
+pub fn compute_results(heat_id: i32, judges: &[User], scores: &[Score], score_processor: &impl ResultComputation) -> Vec<Result> {
+
+    // divide scores by wave id and surfer
+    let scores_grouped =
+        scores
+            .iter()
+            .fold(HashMap::<(i32, i32), Vec<&Score>>::new(), |mut acc, s| {
+                acc.entry((s.surfer_id, s.wave))
+                    .or_insert(Vec::new())
+                    .push(s);
+                acc
+            });
+
+    // compute individual results per wave and surfer (use compute_individual_score)
+    let wave_scores: Vec<(i32, i32, WaveScore)> = scores_grouped
+        .iter()
+        .map(|((surfer_id, wave), individual_scores)| {
+            (
+                *surfer_id,
+                *wave,
+                compute_individual_score(*surfer_id, *wave, judges, individual_scores),
+            )
+        })
+        .collect();
+
+    score_processor.process_wave_scores(heat_id, judges, &wave_scores)
+}
+
 
 fn round_prec(val: f64, prec: i32) -> f64 {
     let d = (10.0_f64).powi(prec);
@@ -41,33 +69,19 @@ fn compute_individual_score(
     }
 }
 
-pub struct Default {}
+pub struct DefaultHeat {
+    pub n_best_waves: usize,
+}
+impl Default for DefaultHeat {
+    fn default() -> Self {
+        DefaultHeat{
+            n_best_waves: 2
+        }
+    }
+}
 
-impl ResultComputation for Default {
-    fn compute_results(heat_id: i32, judges: &[User], scores: &[Score]) -> Vec<Result> {
-
-        // divide scores by wave id and surfer
-        let scores_grouped =
-            scores
-                .iter()
-                .fold(HashMap::<(i32, i32), Vec<&Score>>::new(), |mut acc, s| {
-                    acc.entry((s.surfer_id, s.wave))
-                        .or_insert(Vec::new())
-                        .push(s);
-                    acc
-                });
-
-        // compute individual results per wave and surfer (use compute_individual_score)
-        let wave_scores: Vec<(i32, i32, WaveScore)> = scores_grouped
-            .iter()
-            .map(|((surfer_id, wave), individual_scores)| {
-                (
-                    *surfer_id,
-                    *wave,
-                    compute_individual_score(*surfer_id, *wave, judges, individual_scores),
-                )
-            })
-            .collect();
+impl ResultComputation for DefaultHeat {
+    fn process_wave_scores(&self, heat_id: i32, judges: &[User], wave_scores: &Vec<(i32, i32, WaveScore)>) -> Vec<Result> {
 
         // collect wave scores by surfer
         let mut scores_by_surfer = wave_scores.iter().fold(
@@ -92,9 +106,9 @@ impl ResultComputation for Default {
 
                 // only take best n waves
                 let total_score: f64 =
-                    sorted_scores.iter().take(N_BEST_WAVES).map(|s| round_prec(s.score, PRECISION)).sum();
+                    sorted_scores.iter().take(self.n_best_waves).map(|s| round_prec(s.score, PRECISION)).sum();
 
-                let other_scores: Vec<f64> = wave_scores.iter().skip(N_BEST_WAVES).map(|s| round_prec(s.score, PRECISION)).collect();
+                let other_scores: Vec<f64> = wave_scores.iter().skip(self.n_best_waves).map(|s| round_prec(s.score, PRECISION)).collect();
                 let mut rank_scores = Vec::new();
                 rank_scores.push(total_score);
                 rank_scores.extend(other_scores);
@@ -143,11 +157,10 @@ impl ResultComputation for Default {
         results
     }
 }
+pub struct RSLHeat {}
 
-pub struct RSL {}
-
-impl ResultComputation for RSL {
-    fn compute_results(heat_id: i32, judges: &[User], scores: &[Score]) -> Vec<Result> {
+impl ResultComputation for RSLHeat {
+    fn process_wave_scores(&self, heat_id: i32, judges: &[User], wave_scores: &Vec<(i32, i32, WaveScore)>) -> Vec<Result> {
         Vec::new()
     }
 }
