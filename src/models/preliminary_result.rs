@@ -17,8 +17,12 @@ impl PreliminaryResult {
         let scores = Score::find_by_heat(db, heat_id)
             .await?;
         let heat = Heat::find_by_id(db, heat_id, false)
-            .await?
-            .unwrap();
+            .await?;
+
+        if heat.is_none() {
+           return Ok(Vec::new())
+        }
+        let heat = heat.unwrap();
 
         let results = match heat.heat_type {
             HeatType::Standard => compute_results(heat_id as i32, &judges, &scores, &DefaultHeat::default()),
