@@ -128,7 +128,7 @@ impl ResultComputation for DefaultHeat {
                     .map(|s| round_prec(s.score, PRECISION))
                     .sum();
 
-                let mut other_scores: Vec<f64> = wave_scores
+                let mut other_scores: Vec<f64> = sorted_scores
                     .iter()
                     .skip(self.n_best_waves)
                     .map(|s| round_prec(s.score, PRECISION))
