@@ -6,14 +6,15 @@ use crate::models::{
 };
 
 use slog::info;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::iter::FromIterator;
 
 pub trait ResultComputation {
     fn process_wave_scores(
         &self,
         heat_id: i32,
-        judges: &[User],
-        wave_scores: &Vec<(i32, i32, WaveScore)>,
+        judge_ids: &[User],
+        wave_scores: &Vec<(i32, i32, Option<WaveScore>)>,
     ) -> Vec<Result>;
 }
 
@@ -25,25 +26,28 @@ pub fn compute_results(
     scores: &[Score],
     score_processor: &impl ResultComputation,
 ) -> Vec<Result> {
-    // divide scores by wave id and surfer
-    let scores_grouped =
-        scores
-            .iter()
-            .fold(HashMap::<(i32, i32), Vec<&Score>>::new(), |mut acc, s| {
-                acc.entry((s.surfer_id, s.wave))
-                    .or_insert(Vec::new())
-                    .push(s);
-                acc
-            });
+    // set of judge_ids for filtering
+    let judge_set: HashSet<i32> = HashSet::from_iter(judges.iter().map(|j| j.id));
+
+    // divide scores by wave id and surfer (and filter relevant judges)
+    let scores_grouped = scores
+        .iter()
+        .filter(|s| judge_set.contains(&s.judge_id))
+        .fold(HashMap::<(i32, i32), Vec<&Score>>::new(), |mut acc, s| {
+            acc.entry((s.surfer_id, s.wave))
+                .or_insert(Vec::new())
+                .push(s);
+            acc
+        });
 
     // compute individual results per wave and surfer (use compute_individual_score)
-    let wave_scores: Vec<(i32, i32, WaveScore)> = scores_grouped
+    let wave_scores: Vec<(i32, i32, Option<WaveScore>)> = scores_grouped
         .iter()
         .map(|((surfer_id, wave), individual_scores)| {
             (
                 *surfer_id,
                 *wave,
-                compute_individual_score(*surfer_id, *wave, judges, individual_scores),
+                compute_individual_score(*surfer_id, *wave, &judge_set, individual_scores),
             )
         })
         .collect();
@@ -56,31 +60,43 @@ fn round_prec(val: f64, prec: i32) -> f64 {
     (val * d).round() / d
 }
 
-// TODO: define an errortype for this, e.g. if not all judges gave a score
 fn compute_individual_score(
     surfer_id: i32,
     wave: i32,
-    judges: &[User],
+    judge_ids: &HashSet<i32>,
     scores: &[&Score],
-) -> WaveScore {
+) -> Option<WaveScore> {
     info!(
         LOG,
         "Scores for surfer {} in wave {}: {:?}", surfer_id, wave, scores
     );
-    // TODO: check if all judges provided a score
-    // TODO: sort scores by score
-    // TODO: remove best and worst score
-    // TODO: take mean of remaining scores
-    let score = round_prec(
-        scores.iter().map(|s| s.score).sum::<f64>() / scores.len() as f64,
-        PRECISION,
-    );
-    info!(LOG, "Averaged score: {}", score);
-    WaveScore {
+    let score_judges: HashSet<i32> = HashSet::from_iter(scores.iter().map(|s| s.judge_id));
+    if (*judge_ids != score_judges) || (judge_ids.len() != scores.len()) {
+        info!(
+            LOG,
+            "Not all judges provided scores for surfer {}, wave {}", surfer_id, wave
+        );
+        return None;
+    }
+
+    // sort scores by score
+    let mut ranked_scores: Vec<&Score> = scores.to_vec();
+    ranked_scores.sort_by(|s1, s2| s1.score.partial_cmp(&s2.score).unwrap());
+
+    let score = if scores.len() > 4 {
+        // remove best and worst score
+        // take mean of remaining scores
+        ranked_scores.iter().skip(1).take(scores.len() - 2).map(|s| s.score).sum::<f64>() / (scores.len() - 2) as f64
+    } else {
+        ranked_scores.iter().map(|s| s.score).sum::<f64>() / scores.len() as f64
+    };
+    let score = round_prec(score, PRECISION);
+    info!(LOG, "Averaged score for surfer {}, wave {}: {}", surfer_id, wave, score);
+    Some(WaveScore {
         surfer_id,
         wave,
         score,
-    }
+    })
 }
 
 pub struct DefaultHeat {
@@ -97,13 +113,15 @@ impl ResultComputation for DefaultHeat {
         &self,
         heat_id: i32,
         judges: &[User],
-        wave_scores: &Vec<(i32, i32, WaveScore)>,
+        wave_scores: &Vec<(i32, i32, Option<WaveScore>)>,
     ) -> Vec<Result> {
         // collect wave scores by surfer
         let mut scores_by_surfer = wave_scores.iter().fold(
             HashMap::<i32, Vec<&WaveScore>>::new(),
             |mut acc, (surfer_id, _, wave_score)| {
-                acc.entry(*surfer_id).or_insert(Vec::new()).push(wave_score);
+                if let Some(wave_score) = wave_score {
+                    acc.entry(*surfer_id).or_insert(Vec::new()).push(wave_score);
+                }
                 acc
             },
         );
@@ -197,7 +215,7 @@ impl ResultComputation for RSLHeat {
         &self,
         heat_id: i32,
         judges: &[User],
-        wave_scores: &Vec<(i32, i32, WaveScore)>,
+        wave_scores: &Vec<(i32, i32, Option<WaveScore>)>,
     ) -> Vec<Result> {
         Vec::new()
     }
