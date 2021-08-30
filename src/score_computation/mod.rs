@@ -101,5 +101,6 @@ fn compute_individual_score(
         surfer_id,
         wave,
         score,
+        published: false,
     })
 }

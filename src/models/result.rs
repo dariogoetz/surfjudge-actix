@@ -7,10 +7,29 @@ use serde::{Deserialize, Serialize};
 use sqlx::{types::Json, FromRow};
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct WaveScoreCore {
+    pub surfer_id: i32,
+    pub wave: i32,
+    pub score: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct WaveScore {
     pub surfer_id: i32,
     pub wave: i32,
     pub score: f64,
+    pub published: bool,
+}
+
+impl From<WaveScoreCore> for WaveScore {
+    fn from(wave_score: WaveScoreCore) -> WaveScore {
+        WaveScore {
+            surfer_id: wave_score.surfer_id,
+            wave: wave_score.wave,
+            score: wave_score.score,
+            published: true,
+        }
+    }
 }
 
 // this struct will be used to represent database record
@@ -20,7 +39,7 @@ pub struct ResultCore {
     pub surfer_id: i32,
     pub total_score: f64,
     pub place: i32,
-    pub wave_scores: Json<Vec<WaveScore>>,
+    pub wave_scores: Json<Vec<WaveScoreCore>>,
 }
 
 // this struct will be used to represent database record
@@ -34,7 +53,6 @@ pub struct Result {
     pub heat: Option<Heat>,
     pub surfer: Option<Surfer>,
 }
-// TODO: add surfer from surfer struct
 
 impl From<ResultCore> for Result {
     fn from(result: ResultCore) -> Result {
@@ -43,7 +61,7 @@ impl From<ResultCore> for Result {
             surfer_id: result.surfer_id,
             total_score: result.total_score,
             place: result.place,
-            wave_scores: result.wave_scores.0,
+            wave_scores: result.wave_scores.0.into_iter().map(|s| s.into()).collect(),
             heat: None,
             surfer: None,
         }
