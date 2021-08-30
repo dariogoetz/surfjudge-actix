@@ -70,10 +70,6 @@ fn compute_individual_score(
     judge_ids: &HashSet<i32>,
     scores: &[&Score],
 ) -> Option<WaveScore> {
-    info!(
-        LOG,
-        "Scores for surfer {} in wave {}: {:?}", surfer_id, wave, scores
-    );
     let score_judges: HashSet<i32> = HashSet::from_iter(scores.iter().map(|s| s.judge_id));
     if (*judge_ids != score_judges) || (judge_ids.len() != scores.len()) {
         info!(
@@ -96,7 +92,6 @@ fn compute_individual_score(
         ranked_scores.iter().map(|s| s.score).sum::<f64>() / scores.len() as f64
     };
     let score = round_prec(score, PRECISION);
-    info!(LOG, "Averaged score for surfer {}, wave {}: {}", surfer_id, wave, score);
     Some(WaveScore {
         surfer_id,
         wave,

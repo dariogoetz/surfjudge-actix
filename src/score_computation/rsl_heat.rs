@@ -1,9 +1,7 @@
 use super::{round_prec, ResultComputation, PRECISION};
 
-use crate::logging::LOG;
 use crate::models::result::{Result, WaveScore};
 
-use slog::info;
 use std::collections::HashMap;
 
 pub struct RSLHeat {}
@@ -93,10 +91,6 @@ impl ResultComputation for RSLHeat {
                 heat: None,
                 surfer: None,
             });
-            info!(
-                LOG,
-                "Surfer {}, score {:?}, place {}", surfer_id, total_score, place
-            );
         }
         results
     }
