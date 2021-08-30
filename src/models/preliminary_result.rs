@@ -3,7 +3,7 @@ use crate::models::result::Result;
 use crate::models::user::User;
 use crate::models::score::Score;
 use crate::models::heat::{Heat, HeatType};
-use crate::score_computation::{DefaultHeat, RSLHeat, compute_results};
+use crate::score_computation::{default_heat::DefaultHeat, rsl_heat::RSLHeat, compute_results};
 
 pub struct PreliminaryResult {}
 
@@ -27,7 +27,6 @@ impl PreliminaryResult {
         let results = match heat.heat_type {
             HeatType::Standard => compute_results(heat_id as i32, &judges, &scores, &DefaultHeat::default()),
             HeatType::Call => compute_results(heat_id as i32, &judges, &scores, &RSLHeat{}),
-            _ => Vec::new()
         };
 
         Ok(results)
