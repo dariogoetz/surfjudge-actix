@@ -5,7 +5,7 @@ use crate::models::{
     user::User,
 };
 
-use slog::info;
+use slog::debug;
 use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 
@@ -28,6 +28,7 @@ pub fn compute_results(
     heat_id: i32,
     judges: &[User],
     scores: &[Score],
+    results: &[Result],
     score_processor: &impl ResultComputation,
 ) -> Vec<Result> {
     // set of judge_ids for filtering
@@ -56,7 +57,28 @@ pub fn compute_results(
         })
         .collect();
 
-    score_processor.process_wave_scores(heat_id, &wave_scores)
+    let mut preliminary_results = score_processor.process_wave_scores(heat_id, &wave_scores);
+
+    let grouped_results =
+        results
+            .iter()
+            .fold(HashMap::<(i32, i32), &WaveScore>::new(), |mut acc, r| {
+                r.wave_scores.iter().for_each(|ws| {
+                    acc.insert((ws.surfer_id, ws.wave), ws);
+                });
+                acc
+            });
+    preliminary_results.iter_mut().for_each(|pr| {
+        pr.wave_scores.iter_mut().for_each(|ws| {
+            if let Some(existing_result) = grouped_results.get(&(ws.surfer_id, ws.wave)) {
+                if round_prec(existing_result.score, PRECISION) == round_prec(ws.score, PRECISION) {
+                    ws.published = true;
+                }
+            }
+        });
+    });
+
+    preliminary_results
 }
 
 fn round_prec(val: f64, prec: i32) -> f64 {
@@ -72,7 +94,7 @@ fn compute_individual_score(
 ) -> Option<WaveScore> {
     let score_judges: HashSet<i32> = HashSet::from_iter(scores.iter().map(|s| s.judge_id));
     if (*judge_ids != score_judges) || (judge_ids.len() != scores.len()) {
-        info!(
+        debug!(
             LOG,
             "Not all judges provided scores for surfer {}, wave {}", surfer_id, wave
         );
@@ -87,7 +109,13 @@ fn compute_individual_score(
         let n = scores.len() - 2 * DROP_SCORES;
         // remove best and worst score
         // take mean of remaining scores
-        ranked_scores.iter().skip(DROP_SCORES).take(n).map(|s| s.score).sum::<f64>() / n as f64
+        ranked_scores
+            .iter()
+            .skip(DROP_SCORES)
+            .take(n)
+            .map(|s| s.score)
+            .sum::<f64>()
+            / n as f64
     } else {
         ranked_scores.iter().map(|s| s.score).sum::<f64>() / scores.len() as f64
     };
