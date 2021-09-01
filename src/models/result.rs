@@ -50,6 +50,7 @@ pub struct Result {
     pub total_score: f64,
     pub place: i32,
     pub wave_scores: Vec<WaveScore>,
+    pub published: bool,
     pub heat: Option<Heat>,
     pub surfer: Option<Surfer>,
 }
@@ -62,6 +63,7 @@ impl From<ResultCore> for Result {
             total_score: result.total_score,
             place: result.place,
             wave_scores: result.wave_scores.0.into_iter().map(|s| s.into()).collect(),
+            published: true,
             heat: None,
             surfer: None,
         }

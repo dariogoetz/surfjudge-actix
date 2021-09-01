@@ -1,4 +1,4 @@
-use super::{ResultComputation, round_prec, PRECISION};
+use super::{round_prec, ResultComputation, PRECISION};
 
 use crate::models::result::{Result, WaveScore};
 
@@ -102,6 +102,7 @@ impl ResultComputation for DefaultHeat {
                 place,
                 total_score,
                 wave_scores,
+                published: false,
                 heat: None,
                 surfer: None,
             });

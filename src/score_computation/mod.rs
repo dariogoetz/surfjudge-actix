@@ -59,7 +59,14 @@ pub fn compute_results(
 
     let mut preliminary_results = score_processor.process_wave_scores(heat_id, &wave_scores);
 
-    let grouped_results =
+    let grouped_results = results
+        .iter()
+        .fold(HashMap::<i32, &Result>::new(), |mut acc, r| {
+            acc.insert(r.surfer_id, r);
+            acc
+        });
+
+    let grouped_pub_wave_scores =
         results
             .iter()
             .fold(HashMap::<(i32, i32), &WaveScore>::new(), |mut acc, r| {
@@ -69,9 +76,19 @@ pub fn compute_results(
                 acc
             });
     preliminary_results.iter_mut().for_each(|pr| {
+        if let Some(existing_result) = grouped_results.get(&pr.surfer_id) {
+            if round_prec(existing_result.total_score, PRECISION)
+                == round_prec(pr.total_score, PRECISION)
+            {
+                pr.published = true;
+            }
+        }
         pr.wave_scores.iter_mut().for_each(|ws| {
-            if let Some(existing_result) = grouped_results.get(&(ws.surfer_id, ws.wave)) {
-                if round_prec(existing_result.score, PRECISION) == round_prec(ws.score, PRECISION) {
+            if let Some(existing_wave_score) = grouped_pub_wave_scores.get(&(ws.surfer_id, ws.wave))
+            {
+                if round_prec(existing_wave_score.score, PRECISION)
+                    == round_prec(ws.score, PRECISION)
+                {
                     ws.published = true;
                 }
             }

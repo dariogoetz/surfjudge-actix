@@ -88,6 +88,7 @@ impl ResultComputation for RSLHeat {
                 heat_id,
                 place,
                 wave_scores,
+                published: false,
                 heat: None,
                 surfer: None,
             });
