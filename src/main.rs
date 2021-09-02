@@ -46,7 +46,6 @@ async fn main() -> Result<()> {
     } else {
         None
     };
-    let notifier = Data::new(notifier);
 
     #[cfg(feature = "zmq-notifier")]
     if let Some(address) = &CONFIG.notifications.zmq_sender_address {
@@ -83,6 +82,8 @@ async fn main() -> Result<()> {
         let zmq_receiver = ZMQReceiver::new(&format!("tcp://0.0.0.0:{}", port), &notifier)?;
         zmq_receiver.start().await?;
     };
+
+    let notifier = Data::new(notifier);
 
     let private_key = rand::thread_rng().gen::<[u8; 32]>();
     let sessions = Data::new(Sessions::new());
