@@ -64,7 +64,7 @@ impl ResultComputation for RSLHeat {
         let mut prev_total_score: Option<&f64> = None;
         for (idx, (surfer_id, total_score)) in ranking_scores.iter().enumerate() {
             if let Some(prev) = prev_total_score {
-                if *prev == *total_score {
+                if float_eq(*prev, *total_score) {
                     place = prev_place;
                 } else {
                     prev_place = idx as i32;
