@@ -1,4 +1,4 @@
-use super::{round_prec, ResultComputation, PRECISION};
+use super::{ResultComputation, float_cmp};
 
 use crate::models::result::{Result, WaveScore};
 
@@ -43,14 +43,14 @@ impl ResultComputation for RSLHeat {
         let mut total_scores_by_surfer: HashMap<i32, f64> = HashMap::new();
         for (_, scores) in scores_by_wave.iter() {
             let best_score = scores.iter().max_by(|s1, s2| {
-                round_prec(s1.score, PRECISION)
-                    .partial_cmp(&(round_prec(s2.score, PRECISION)))
+                s1.score
+                    .partial_cmp(&s2.score)
                     .unwrap()
             });
             if let Some(best_score) = best_score {
                 scores.iter().for_each(|s| {
                     let e = total_scores_by_surfer.entry(s.surfer_id).or_insert(0.0);
-                    if round_prec(s.score, PRECISION) == round_prec(best_score.score, PRECISION) {
+                    if float_cmp(s.score, best_score.score) {
                         *e += 1.0;
                     }
                 })

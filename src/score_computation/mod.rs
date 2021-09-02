@@ -5,7 +5,7 @@ use crate::models::{
     user::User,
 };
 
-use slog::debug;
+use slog::{debug, info};
 use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 
@@ -20,7 +20,7 @@ pub trait ResultComputation {
     ) -> Vec<Result>;
 }
 
-const PRECISION: i32 = 5;
+const EPSILON: f64 = 1e-5;
 const MIN_JUDGES_FOR_DROP: usize = 4;
 const DROP_SCORES: usize = 1;
 
@@ -77,18 +77,19 @@ pub fn compute_results(
             });
     preliminary_results.iter_mut().for_each(|pr| {
         if let Some(existing_result) = grouped_results.get(&pr.surfer_id) {
-            if round_prec(existing_result.total_score, PRECISION)
-                == round_prec(pr.total_score, PRECISION)
-            {
+            if float_cmp(existing_result.total_score, pr.total_score) {
                 pr.published = true;
+            } else {
+                info!(
+                    LOG,
+                    "not published: {} != {}", existing_result.total_score, pr.total_score
+                );
             }
         }
         pr.wave_scores.iter_mut().for_each(|ws| {
             if let Some(existing_wave_score) = grouped_pub_wave_scores.get(&(ws.surfer_id, ws.wave))
             {
-                if round_prec(existing_wave_score.score, PRECISION)
-                    == round_prec(ws.score, PRECISION)
-                {
+                if float_cmp(existing_wave_score.score, ws.score) {
                     ws.published = true;
                 }
             }
@@ -98,9 +99,8 @@ pub fn compute_results(
     preliminary_results
 }
 
-fn round_prec(val: f64, prec: i32) -> f64 {
-    let d = (10.0_f64).powi(prec);
-    (val * d).round() / d
+fn float_cmp(val1: f64, val2: f64) -> bool {
+    (val1 - val2).abs() < EPSILON
 }
 
 fn compute_individual_score(
@@ -119,24 +119,36 @@ fn compute_individual_score(
     }
 
     // sort scores by score
-    let mut ranked_scores: Vec<&Score> = scores.to_vec();
-    ranked_scores.sort_by(|s1, s2| s1.score.partial_cmp(&s2.score).unwrap());
+    let mut ranked_scores: Vec<f64> =
+        scores.iter().filter(|s| !s.missed).map(|s| s.score).collect();
 
-    let score = if scores.len() > MIN_JUDGES_FOR_DROP {
-        let n = scores.len() - 2 * DROP_SCORES;
+    if ranked_scores.len() == 0 {
+        debug!(LOG, "All judges missed score for surfer {}, wave {}", surfer_id, wave);
+        return None
+    }
+    // fill missed scores with average of non-missed scores
+    let n_missed = scores.len() - ranked_scores.len();
+    let missed_substitute = ranked_scores.iter().sum::<f64>() / ranked_scores.len() as f64;
+    ranked_scores.extend(vec![missed_substitute; n_missed]);
+
+    // sort scores before removing first and last ones
+    ranked_scores.sort_by(|s1, s2| s1.partial_cmp(&s2).unwrap());
+
+    let score = if (scores.len() > MIN_JUDGES_FOR_DROP) && (ranked_scores.len() > 2 * DROP_SCORES) {
+        let n = ranked_scores.len() - 2 * DROP_SCORES;
+
         // remove best and worst score
         // take mean of remaining scores
         ranked_scores
             .iter()
             .skip(DROP_SCORES)
             .take(n)
-            .map(|s| s.score)
+            .map(|s| s)
             .sum::<f64>()
             / n as f64
     } else {
-        ranked_scores.iter().map(|s| s.score).sum::<f64>() / scores.len() as f64
+        ranked_scores.iter().sum::<f64>() / scores.len() as f64
     };
-    let score = round_prec(score, PRECISION);
     Some(WaveScore {
         surfer_id,
         wave,
