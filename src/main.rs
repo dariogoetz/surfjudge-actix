@@ -6,7 +6,12 @@ use std::sync::Arc;
 use actix::prelude::*;
 use actix_cors::Cors;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
-use actix_web::{middleware::Compress, middleware::Logger, web::{self, Data}, App, HttpServer};
+use actix_web::{
+    middleware::Compress,
+    middleware::Logger,
+    web::{self, Data},
+    App, HttpServer,
+};
 
 mod authentication;
 mod authorization;
@@ -17,8 +22,8 @@ mod logging;
 mod models;
 mod notifier;
 mod routes;
-mod websockets;
 mod score_computation;
+mod websockets;
 
 #[actix_web::main]
 async fn main() -> Result<()> {

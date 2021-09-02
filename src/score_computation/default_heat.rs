@@ -77,7 +77,11 @@ impl ResultComputation for DefaultHeat {
         let mut prev_rank_scores: Option<&Vec<f64>> = None;
         for (idx, (surfer_id, total_score, rank_scores)) in ranking_scores.iter().enumerate() {
             if let Some(prev) = prev_rank_scores {
-                if prev.iter().zip(rank_scores.iter()).all(|(s1, s2)| float_cmp(*s1, *s2)) {
+                if prev
+                    .iter()
+                    .zip(rank_scores.iter())
+                    .all(|(s1, s2)| float_cmp(*s1, *s2))
+                {
                     place = prev_place;
                 } else {
                     prev_place = idx as i32;

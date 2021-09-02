@@ -5,7 +5,7 @@ use crate::models::{
     user::User,
 };
 
-use slog::{debug, info};
+use slog::debug;
 use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 
@@ -79,11 +79,6 @@ pub fn compute_results(
         if let Some(existing_result) = grouped_results.get(&pr.surfer_id) {
             if float_cmp(existing_result.total_score, pr.total_score) {
                 pr.published = true;
-            } else {
-                info!(
-                    LOG,
-                    "not published: {} != {}", existing_result.total_score, pr.total_score
-                );
             }
         }
         pr.wave_scores.iter_mut().for_each(|ws| {
@@ -119,12 +114,18 @@ fn compute_individual_score(
     }
 
     // sort scores by score
-    let mut ranked_scores: Vec<f64> =
-        scores.iter().filter(|s| !s.missed).map(|s| s.score).collect();
+    let mut ranked_scores: Vec<f64> = scores
+        .iter()
+        .filter(|s| !s.missed)
+        .map(|s| s.score)
+        .collect();
 
     if ranked_scores.len() == 0 {
-        debug!(LOG, "All judges missed score for surfer {}, wave {}", surfer_id, wave);
-        return None
+        debug!(
+            LOG,
+            "All judges missed score for surfer {}, wave {}", surfer_id, wave
+        );
+        return None;
     }
     // fill missed scores with average of non-missed scores
     let n_missed = scores.len() - ranked_scores.len();

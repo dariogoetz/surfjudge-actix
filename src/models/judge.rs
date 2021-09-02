@@ -65,7 +65,7 @@ impl JudgingRequest {
             r#"
 DELETE FROM judging_requests
 WHERE expire_date < NOW();
-        "#
+        "#,
         )
         .execute(db)
         .await?;
@@ -94,7 +94,6 @@ RETURNING judge_id;
         Ok(res.rows_affected() > 0)
     }
 }
-
 
 // this struct represents a judging request database record
 #[derive(Debug, Serialize, Deserialize, FromRow)]

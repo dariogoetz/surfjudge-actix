@@ -133,10 +133,19 @@ pub fn admin_api_routes(cfg: &mut web::ServiceConfig) {
                 web::get().to(judge::get_assigned_judges_for_heat),
             )
             .route("/judging_requests", web::get().to(judge::get_requests))
-            .route("/heats/{heat_id}/judges/{judge_id}", web::put().to(judge::add_assignment))
-            .route("/heats/{heat_id}/judges/{judge_id}", web::delete().to(judge::delete_assignment))
-            .route("/heats/{heat_id}/preliminary_results", web::get().to(result::get_preliminary_by_heat_id))
-        );
+            .route(
+                "/heats/{heat_id}/judges/{judge_id}",
+                web::put().to(judge::add_assignment),
+            )
+            .route(
+                "/heats/{heat_id}/judges/{judge_id}",
+                web::delete().to(judge::delete_assignment),
+            )
+            .route(
+                "/heats/{heat_id}/preliminary_results",
+                web::get().to(result::get_preliminary_by_heat_id),
+            ),
+    );
 }
 
 pub fn judging_api_routes(cfg: &mut web::ServiceConfig) {
