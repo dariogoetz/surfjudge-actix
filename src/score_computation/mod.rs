@@ -77,14 +77,14 @@ pub fn compute_results(
             });
     preliminary_results.iter_mut().for_each(|pr| {
         if let Some(existing_result) = grouped_results.get(&pr.surfer_id) {
-            if float_cmp(existing_result.total_score, pr.total_score) {
+            if float_eq(existing_result.total_score, pr.total_score) {
                 pr.published = true;
             }
         }
         pr.wave_scores.iter_mut().for_each(|ws| {
             if let Some(existing_wave_score) = grouped_pub_wave_scores.get(&(ws.surfer_id, ws.wave))
             {
-                if float_cmp(existing_wave_score.score, ws.score) {
+                if float_eq(existing_wave_score.score, ws.score) {
                     ws.published = true;
                 }
             }
@@ -94,7 +94,7 @@ pub fn compute_results(
     preliminary_results
 }
 
-fn float_cmp(val1: f64, val2: f64) -> bool {
+fn float_eq(val1: f64, val2: f64) -> bool {
     (val1 - val2).abs() < EPSILON
 }
 

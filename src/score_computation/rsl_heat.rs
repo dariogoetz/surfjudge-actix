@@ -1,4 +1,4 @@
-use super::{float_cmp, ResultComputation};
+use super::{float_eq, ResultComputation};
 
 use crate::models::result::{Result, WaveScore};
 
@@ -48,7 +48,7 @@ impl ResultComputation for RSLHeat {
             if let Some(best_score) = best_score {
                 scores.iter().for_each(|s| {
                     let e = total_scores_by_surfer.entry(s.surfer_id).or_insert(0.0);
-                    if float_cmp(s.score, best_score.score) {
+                    if float_eq(s.score, best_score.score) {
                         *e += 1.0;
                     }
                 })

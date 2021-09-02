@@ -1,4 +1,4 @@
-use super::{float_cmp, ResultComputation};
+use super::{float_eq, ResultComputation};
 
 use crate::models::result::{Result, WaveScore};
 
@@ -80,7 +80,7 @@ impl ResultComputation for DefaultHeat {
                 if prev
                     .iter()
                     .zip(rank_scores.iter())
-                    .all(|(s1, s2)| float_cmp(*s1, *s2))
+                    .all(|(s1, s2)| float_eq(*s1, *s2))
                 {
                     place = prev_place;
                 } else {
