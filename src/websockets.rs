@@ -180,19 +180,18 @@ impl Handler<SendChannel> for WebSocketServer {
         );
 
         if let Some(sessions) = self.channels.get(&msg.channel) {
-            let message = json!(msg);
             info!(
                 LOG,
                 "Sending message to {} clients in channel '{:?}': {}",
                 sessions.len(),
                 msg.channel,
-                message
+                msg.message
             );
             for client_id in sessions.iter() {
                 if let Some(addr) = self.sessions.get(client_id) {
                     let _ = addr.do_send(WSMessage {
                         channel: msg.channel.to_owned(),
-                        message: message.to_string(),
+                        message: msg.message.to_owned(),
                     });
                 }
             }
