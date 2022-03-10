@@ -44,7 +44,6 @@ impl AuthenticatedUser {
 pub type Sessions = DashMap<String, AuthenticatedUser>;
 
 impl FromRequest for AuthenticatedUser {
-    type Config = ();
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<AuthenticatedUser, Error>>>>;
 

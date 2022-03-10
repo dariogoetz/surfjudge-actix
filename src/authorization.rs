@@ -57,7 +57,6 @@ impl fmt::Display for AuthorizedUser {
 }
 
 impl FromRequest for AuthorizedUser {
-    type Config = ();
     type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<AuthorizedUser, Error>>>>;
 
