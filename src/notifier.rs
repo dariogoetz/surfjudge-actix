@@ -66,7 +66,7 @@ impl Notify for WSNotifier {
             channel: msg.channel.clone(),
             message: msg.message.clone(),
         };
-        self.addr.do_send(msg)?;
+        self.addr.do_send(msg);
         Ok(())
     }
 }
