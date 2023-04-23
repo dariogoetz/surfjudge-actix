@@ -9,6 +9,8 @@ services:
       - DATABASE__URL=postgresql://postgres:surfjudge2000@postgres:5432/postgres
       - SERVER_ADDRESS=0.0.0.0:8080
       - API__PUBLIC_PATH=/public
+      - API__JUDGING_PATH=/judging
+      - API__AUTH_PATH=/auth
       - API__WEBSOCKET_URL=wss://websocket.surfjudge.de
     volumes:
       - ./static:/app/static:ro
